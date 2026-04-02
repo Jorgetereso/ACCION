@@ -330,6 +330,45 @@ body{
   background-image:radial-gradient(circle,#1a1a1a 1px,transparent 1px);
   background-size:30px 30px;
 }
+
+/* ---- MOBILE ---- */
+@media(max-width:600px){
+  .canvas-wrap{
+    overflow-y:auto !important;overflow-x:hidden !important;
+    cursor:default;background-image:none;
+    -webkit-overflow-scrolling:touch;
+  }
+  .canvas-wrap.panning{cursor:default}
+  .canvas{
+    position:relative !important;
+    transform:none !important;
+    width:100% !important;height:auto !important;
+    display:flex;flex-direction:column;gap:12px;
+    padding:12px;padding-bottom:80px;
+  }
+  .project-col{
+    position:relative !important;
+    left:auto !important;top:auto !important;
+    width:100% !important;min-width:0 !important;max-width:100% !important;
+    resize:none !important;overflow:hidden;
+  }
+  .today-card{
+    position:relative !important;
+    left:auto !important;top:auto !important;
+    width:100% !important;min-width:0 !important;max-width:100% !important;
+    resize:none !important;order:-1;
+  }
+  .today-card.empty{display:none}
+  .topbar{height:40px;padding:0 10px}
+  .app-name{font-size:12px;letter-spacing:2px}
+  .project-header{cursor:default}
+  .btn-delete-project{opacity:1}
+  .task-delete{opacity:.6}
+  .priority-dots.no-priority{opacity:.8}
+  .today-drag-handle{opacity:.6}
+  .flying-emoji{display:none}
+  #btnPip{display:none}
+}
 .flying-emoji{
   position:fixed;z-index:0;pointer-events:none;
   font-size:40px;opacity:.1;
@@ -452,6 +491,9 @@ function saveUser(u){
   localStorage.setItem('accion_user', JSON.stringify(u));
 }
 
+// ---- MOBILE DETECT ----
+const isMobile = window.matchMedia('(max-width:600px)').matches;
+
 // ---- CANVAS PAN ----
 const canvasWrap = document.getElementById('canvasWrap');
 const canvas = document.getElementById('canvas');
@@ -460,18 +502,19 @@ let isPanning = false, panStartX, panStartY;
 
 // Load saved pan
 const savedPan = JSON.parse(localStorage.getItem('accion_pan'));
-if(savedPan){panX=savedPan.x;panY=savedPan.y;zoom=savedPan.z||1}
-updateCanvasTransform();
+if(!isMobile && savedPan){panX=savedPan.x;panY=savedPan.y;zoom=savedPan.z||1}
+if(!isMobile) updateCanvasTransform();
 
 function updateCanvasTransform(){
+  if(isMobile) return;
   canvas.style.transform = `translate(${panX}px,${panY}px) scale(${zoom})`;
 }
 function savePan(){
   localStorage.setItem('accion_pan',JSON.stringify({x:panX,y:panY,z:zoom}));
 }
 
+if(!isMobile){
 canvasWrap.addEventListener('pointerdown', e=>{
-  // Only pan if clicking empty canvas area
   if(e.target === canvasWrap || e.target === canvas){
     isPanning = true;
     panStartX = e.clientX - panX;
@@ -502,6 +545,8 @@ canvasWrap.addEventListener('wheel', e=>{
   updateCanvasTransform();
   savePan();
 },{passive:false});
+
+} // end if(!isMobile) for canvas pan/zoom
 
 // ---- CARD DRAGGING ----
 let dragCard = null, dragOffX = 0, dragOffY = 0, dragPi = -1;
@@ -642,11 +687,13 @@ function renderToday(){
       renderToday();
     });
   });
-  // Drag today card header
-  card.querySelector('[data-drag="today"]').addEventListener('pointerdown', e=>{
-    e.stopPropagation();
-    startCardDrag(card, -1, e);
-  });
+  // Drag today card header (desktop only)
+  if(!isMobile){
+    card.querySelector('[data-drag="today"]').addEventListener('pointerdown', e=>{
+      e.stopPropagation();
+      startCardDrag(card, -1, e);
+    });
+  }
 }
 
 function renderUser(){
@@ -726,17 +773,18 @@ function esc(s){
 }
 
 function attachEvents(){
-  // Card header drag
-  document.querySelectorAll('.project-header[data-drag]').forEach(hdr=>{
-    const pi = +hdr.dataset.drag;
-    if(isNaN(pi)) return;
-    hdr.addEventListener('pointerdown', e=>{
-      // Don't drag if clicking buttons inside header
-      if(e.target.closest('.color-dot, .btn-delete-project, .color-popover, .color-swatch')) return;
-      e.stopPropagation();
-      startCardDrag(hdr.closest('.project-col'), pi, e);
+  // Card header drag (desktop only)
+  if(!isMobile){
+    document.querySelectorAll('.project-header[data-drag]').forEach(hdr=>{
+      const pi = +hdr.dataset.drag;
+      if(isNaN(pi)) return;
+      hdr.addEventListener('pointerdown', e=>{
+        if(e.target.closest('.color-dot, .btn-delete-project, .color-popover, .color-swatch')) return;
+        e.stopPropagation();
+        startCardDrag(hdr.closest('.project-col'), pi, e);
+      });
     });
-  });
+  }
 
   // Checkboxes
   document.querySelectorAll('.task-checkbox').forEach(cb=>{

@@ -1,0 +1,18 @@
+{
+  "permissions": {
+    "allow": [
+      "WebFetch(domain:venngage-wordpress.s3.amazonaws.com)",
+      "Bash(cygpath -w \"C:\\\\Users\\\\George\\\\ACCION\\\\index.html\")",
+      "Bash(git --version)",
+      "Bash(gh --version)",
+      "Bash(gh auth:*)",
+      "Bash(git init:*)",
+      "Bash(git add:*)",
+      "Bash(git commit:*)",
+      "Bash(git config:*)",
+      "Bash(gh repo:*)",
+      "Bash(gh api:*)",
+      "Bash(git push:*)"
+    ]
+  }
+}
