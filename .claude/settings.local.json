@@ -12,7 +12,14 @@
       "Bash(git config:*)",
       "Bash(gh repo:*)",
       "Bash(gh api:*)",
-      "Bash(git push:*)"
+      "Bash(git push:*)",
+      "Bash(node -c /c/Users/George/ACCION/index.html)",
+      "Bash(sed -n '/<script>/,/<\\\\/script>/p')",
+      "Bash(powershell -command \"& { try { Add-Type -AssemblyName System.Web; } catch {} }\")",
+      "Read(//tmp/**)",
+      "Bash(where.exe node:*)",
+      "Bash(\"C:/Program Files/nodejs/node.exe\" -e \"try{require\\('fs'\\).readFileSync\\('index.html','utf8'\\).replace\\(/<script>\\([\\\\s\\\\S]*\\)<\\\\/script>/,\\(m,js\\)=>{new Function\\(js\\)}\\);console.log\\('OK'\\)}catch\\(e\\){console.log\\(e.message\\)}\")",
+      "WebFetch(domain:jorgetereso.github.io)"
     ]
   }
 }
