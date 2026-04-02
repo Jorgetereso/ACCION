@@ -4,6 +4,11 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>ACCION</title>
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#0a0a0a">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="ACCION">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;500;600&display=swap" rel="stylesheet">
@@ -74,7 +79,7 @@ body{
   background:var(--bg1);border:1px solid var(--border);border-radius:6px;
   display:flex;flex-direction:column;
   transition:border-color .2s,box-shadow .2s;
-  resize:both;overflow:auto;min-width:200px;max-width:600px;min-height:80px;
+  resize:both;overflow:hidden;min-width:200px;max-width:600px;min-height:80px;
   z-index:1;
 }
 .project-col:hover{border-color:#333}
@@ -96,9 +101,9 @@ body{
 }
 .color-dot:hover{transform:scale(1.3);box-shadow:0 0 6px currentColor}
 .color-popover{
-  position:absolute;top:100%;left:8px;z-index:60;
+  position:fixed;z-index:200;
   background:var(--bg1);border:1px solid var(--border);border-radius:6px;
-  padding:8px;display:flex;flex-wrap:wrap;gap:5px;width:160px;
+  padding:8px;display:flex;flex-wrap:wrap;gap:5px;width:180px;
   opacity:0;pointer-events:none;transition:opacity .12s;
   box-shadow:0 4px 16px rgba(0,0,0,.5);
 }
@@ -122,16 +127,16 @@ body{
 .color-popover .bg-crazy:hover{border-color:#fff;transform:scale(1.15)}
 .color-popover .bg-crazy.active-bg{border-color:var(--accent)}
 
+@keyframes crazy-swatch{
+  0%{background-position:0% 50%}
+  50%{background-position:100% 50%}
+  100%{background-position:0% 50%}
+}
 @keyframes crazy-bg{
   0%{background-position:0% 50%}
   25%{background-position:100% 0%}
   50%{background-position:100% 100%}
   75%{background-position:0% 100%}
-  100%{background-position:0% 50%}
-}
-@keyframes crazy-swatch{
-  0%{background-position:0% 50%}
-  50%{background-position:100% 50%}
   100%{background-position:0% 50%}
 }
 .project-col.crazy-bg{
@@ -242,10 +247,18 @@ body{
 .today-count{font-size:10px;color:var(--dim)}
 .today-tasks{padding:6px 0}
 .today-task-item{
-  display:flex;align-items:center;gap:6px;padding:3px 12px 3px 14px;
+  display:flex;align-items:center;gap:6px;padding:3px 12px 3px 8px;
   font-size:11px;color:var(--text);transition:background .1s;
 }
 .today-task-item:hover{background:rgba(255,255,255,.02)}
+.today-drag-handle{
+  cursor:grab;color:var(--dimmer);font-size:10px;padding:0 2px;
+  opacity:0;transition:opacity .1s;user-select:none;flex-shrink:0;
+}
+.today-task-item:hover .today-drag-handle{opacity:1}
+.today-task-item.dragging-task{opacity:.4}
+.today-task-item.drag-above{box-shadow:0 -1px 0 0 var(--accent)}
+.today-task-item.drag-below{box-shadow:0 1px 0 0 var(--accent)}
 .today-task-item.done .today-task-text{
   text-decoration:line-through;opacity:.35;color:var(--dim);
 }
@@ -317,6 +330,15 @@ body{
   background-image:radial-gradient(circle,#1a1a1a 1px,transparent 1px);
   background-size:30px 30px;
 }
+.flying-emoji{
+  position:fixed;z-index:0;pointer-events:none;
+  font-size:40px;opacity:.1;
+  animation:fly-across linear forwards;
+}
+@keyframes fly-across{
+  0%{transform:translateX(-60px) rotate(0deg)}
+  100%{transform:translateX(calc(100vw + 60px)) rotate(360deg)}
+}
 </style>
 </head>
 <body>
@@ -348,6 +370,9 @@ body{
     </div>
   </div>
 </div>
+
+<!-- GLOBAL COLOR POPOVER (outside canvas so fixed positioning works) -->
+<div class="color-popover" id="globalPopover"></div>
 
 <!-- ADD PROJECT MODAL -->
 <div class="modal-overlay" id="modalOverlay">
@@ -406,6 +431,8 @@ function uid(){return Math.random().toString(36).substr(2,9)}
 let projects = loadProjects();
 let user = loadUser();
 let todayPos = JSON.parse(localStorage.getItem('accion_today_pos'))||{x:20,y:20};
+let todayOrder = JSON.parse(localStorage.getItem('accion_today_order'))||[];
+function saveTodayOrder(){ localStorage.setItem('accion_today_order',JSON.stringify(todayOrder)); }
 
 function loadProjects(){
   const raw = localStorage.getItem('accion_projects');
@@ -532,34 +559,86 @@ function renderToday(){
   const card = document.getElementById('todayCard');
   const container = document.getElementById('todayTasks');
   const countEl = document.getElementById('todayCount');
-  const items = [];
+  // Collect all today items with a stable key
+  const rawItems = [];
   projects.forEach((proj,pi)=>{
     proj.tasks.forEach((t,ti)=>{
-      if(t.priority==='today') items.push({...t,pi,ti,projName:proj.name,projColor:proj.color});
+      if(t.priority==='today') rawItems.push({key:pi+'-'+ti,pi,ti,text:t.text,done:t.done,projName:proj.name,projColor:proj.color});
     });
   });
-  if(!items.length){
+  if(!rawItems.length){
     card.classList.add('empty');
+    todayOrder=[];saveTodayOrder();
     return;
   }
+  // Sync todayOrder: keep existing order, append new items, remove stale
+  const currentKeys = new Set(rawItems.map(i=>i.key));
+  todayOrder = todayOrder.filter(k=>currentKeys.has(k));
+  rawItems.forEach(i=>{ if(!todayOrder.includes(i.key)) todayOrder.push(i.key); });
+  saveTodayOrder();
+  // Sort by todayOrder
+  const keyMap = {};
+  rawItems.forEach(i=>keyMap[i.key]=i);
+  const items = todayOrder.map(k=>keyMap[k]).filter(Boolean);
+
   card.classList.remove('empty');
   card.style.left = todayPos.x + 'px';
   card.style.top = todayPos.y + 'px';
   const pending = items.filter(i=>!i.done).length;
   countEl.textContent = pending + ' to go';
-  container.innerHTML = items.map(it=>`
-    <div class="today-task-item ${it.done?'done':''}">
+  container.innerHTML = items.map((it,idx)=>`
+    <div class="today-task-item ${it.done?'done':''}" data-idx="${idx}" draggable="true">
+      <span class="today-drag-handle">&#8942;</span>
       <input type="checkbox" class="today-task-check" data-pi="${it.pi}" data-ti="${it.ti}" ${it.done?'checked':''}>
       <span class="today-task-text">${esc(it.text)}</span>
       <span class="today-project-tag" style="color:${it.projColor}">${esc(it.projName)}</span>
     </div>
   `).join('');
+  // Checkbox events
   container.querySelectorAll('.today-task-check').forEach(cb=>{
     cb.addEventListener('change',e=>{
       const pi=+e.target.dataset.pi, ti=+e.target.dataset.ti;
       projects[pi].tasks[ti].done = e.target.checked;
       saveProjects();
       renderProjects();
+      renderToday();
+    });
+  });
+  // Drag reorder within today list
+  let dragFromIdx = null;
+  const rows = container.querySelectorAll('.today-task-item');
+  rows.forEach(row=>{
+    row.addEventListener('dragstart',e=>{
+      dragFromIdx = +row.dataset.idx;
+      row.classList.add('dragging-task');
+      e.dataTransfer.effectAllowed='move';
+      e.stopPropagation();
+    });
+    row.addEventListener('dragend',()=>{
+      row.classList.remove('dragging-task');
+      rows.forEach(r=>{r.classList.remove('drag-above');r.classList.remove('drag-below')});
+      dragFromIdx=null;
+    });
+    row.addEventListener('dragover',e=>{
+      e.preventDefault();
+      e.stopPropagation();
+      if(dragFromIdx===null) return;
+      const idx=+row.dataset.idx;
+      rows.forEach(r=>{r.classList.remove('drag-above');r.classList.remove('drag-below')});
+      if(idx<dragFromIdx) row.classList.add('drag-above');
+      else if(idx>dragFromIdx) row.classList.add('drag-below');
+    });
+    row.addEventListener('dragleave',()=>{
+      row.classList.remove('drag-above');row.classList.remove('drag-below');
+    });
+    row.addEventListener('drop',e=>{
+      e.preventDefault();
+      e.stopPropagation();
+      const toIdx=+row.dataset.idx;
+      if(dragFromIdx===null||dragFromIdx===toIdx) return;
+      const moved=todayOrder.splice(dragFromIdx,1)[0];
+      todayOrder.splice(toIdx,0,moved);
+      saveTodayOrder();
       renderToday();
     });
   });
@@ -607,13 +686,6 @@ function renderProjects(){
         </div>
         <div class="project-actions">
           <button class="btn-delete-project" data-pi="${pi}" title="Delete project">&times;</button>
-        </div>
-        <div class="color-popover" data-pi="${pi}">
-          <div class="pop-label">COLOR</div>
-          ${PALETTE.map(c=>`<div class="color-swatch" data-color="${c}" data-pi="${pi}" style="background:${c}"></div>`).join('')}
-          <div class="pop-label">BACKGROUND</div>
-          <div class="bg-crazy ${proj.bg==='crazy'?'active-bg':''}" data-bg="crazy" data-pi="${pi}" title="PASSIONATE"></div>
-          ${BG_PALETTE.map(c=>`<div class="bg-swatch ${(proj.bg||'#111111')===c?'active-bg':''}" data-bg="${c}" data-pi="${pi}" style="background:${c}"></div>`).join('')}
         </div>
       </div>
       <div class="progress-bar"><div class="progress-fill" style="width:${pct}%;background:${proj.color}"></div></div>
@@ -744,38 +816,51 @@ function attachEvents(){
     });
   });
 
-  // Color dot -> open popover
+  // Color dot -> open global popover
+  const gPop = document.getElementById('globalPopover');
   document.querySelectorAll('.color-dot').forEach(dot=>{
     dot.addEventListener('click', e=>{
       e.stopPropagation();
-      const pi = dot.dataset.pi;
-      document.querySelectorAll('.color-popover').forEach(p=>p.classList.remove('active'));
-      const popover = document.querySelector(`.color-popover[data-pi="${pi}"]`);
-      popover.classList.toggle('active');
+      const pi = +dot.dataset.pi;
+      const proj = projects[pi];
+      const wasOpen = gPop.classList.contains('active') && gPop.dataset.pi === ''+pi;
+      gPop.classList.remove('active');
+      if(wasOpen) return;
+      gPop.dataset.pi = pi;
+      gPop.innerHTML = `
+        <div class="pop-label">COLOR</div>
+        ${PALETTE.map(c=>`<div class="color-swatch" data-color="${c}" style="background:${c}"></div>`).join('')}
+        <div class="pop-label">BACKGROUND</div>
+        <div class="bg-crazy ${proj.bg==='crazy'?'active-bg':''}" data-bg="crazy" title="PASSIONATE"></div>
+        ${BG_PALETTE.map(c=>`<div class="bg-swatch ${(proj.bg||'#111111')===c?'active-bg':''}" data-bg="${c}" style="background:${c}"></div>`).join('')}
+      `;
+      gPop.style.left = e.clientX + 'px';
+      gPop.style.top = (e.clientY + 14) + 'px';
+      gPop.classList.add('active');
+      requestAnimationFrame(()=>{
+        const pr = gPop.getBoundingClientRect();
+        if(pr.right > window.innerWidth) gPop.style.left = (window.innerWidth - pr.width - 8) + 'px';
+        if(pr.bottom > window.innerHeight) gPop.style.top = (e.clientY - pr.height - 8) + 'px';
+      });
+      // Color swatches
+      gPop.querySelectorAll('.color-swatch').forEach(sw=>{
+        sw.addEventListener('click', ev=>{
+          ev.stopPropagation();
+          projects[pi].color = sw.dataset.color;
+          saveProjects(); gPop.classList.remove('active'); renderProjects();
+        });
+      });
+      // Bg swatches
+      gPop.querySelectorAll('.bg-swatch, .bg-crazy').forEach(sw=>{
+        sw.addEventListener('click', ev=>{
+          ev.stopPropagation();
+          projects[pi].bg = sw.dataset.bg;
+          saveProjects(); gPop.classList.remove('active'); renderProjects();
+        });
+      });
     });
   });
-  document.querySelectorAll('.color-popover .color-swatch').forEach(sw=>{
-    sw.addEventListener('click', e=>{
-      e.stopPropagation();
-      const pi=+sw.dataset.pi;
-      projects[pi].color=sw.dataset.color;
-      saveProjects();
-      renderProjects();
-    });
-  });
-  // Background swatches (includes crazy)
-  document.querySelectorAll('.color-popover .bg-swatch, .color-popover .bg-crazy').forEach(sw=>{
-    sw.addEventListener('click', e=>{
-      e.stopPropagation();
-      const pi=+sw.dataset.pi;
-      projects[pi].bg = sw.dataset.bg;
-      saveProjects();
-      renderProjects();
-    });
-  });
-  document.addEventListener('click',()=>{
-    document.querySelectorAll('.color-popover').forEach(p=>p.classList.remove('active'));
-  });
+  document.addEventListener('click',()=>{ gPop.classList.remove('active'); });
 }
 
 // ---- ADD PROJECT MODAL ----
@@ -920,8 +1005,13 @@ function buildPipContent(){
       .pip-count{font-size:10px;color:#888}
       .pip-section{margin-bottom:12px}
       .pip-project{font-size:10px;font-weight:500;letter-spacing:1px;margin:8px 0 4px;padding-left:2px}
-      .pip-task{display:flex;align-items:center;gap:6px;padding:3px 0;font-size:11px}
+      .pip-task{display:flex;align-items:center;gap:6px;padding:3px 2px;font-size:11px;border-radius:3px}
       .pip-task.done span{text-decoration:line-through;opacity:.35;color:#888}
+      .pip-drag{cursor:grab;color:#555;font-size:9px;opacity:0;transition:opacity .1s;user-select:none;flex-shrink:0}
+      .pip-task:hover .pip-drag{opacity:1}
+      .pip-task.pip-dragging{opacity:.4}
+      .pip-task.pip-above{box-shadow:0 -1px 0 0 #3b82f6}
+      .pip-task.pip-below{box-shadow:0 1px 0 0 #3b82f6}
       .pip-cb{
         appearance:none;-webkit-appearance:none;width:12px;height:12px;min-width:12px;
         border:1px solid #444;border-radius:2px;cursor:pointer;
@@ -944,16 +1034,26 @@ function updatePipContent(){
   const root = pipWindow.document.getElementById('pip-root');
   if(!root) return;
 
-  // Collect today items only
-  const todayItems = [];
+  // Collect today items, use todayOrder for sorting
+  const rawItems = [];
   projects.forEach((proj,pi)=>{
     proj.tasks.forEach((t,ti)=>{
-      if(t.priority==='today' && !t.done)
-        todayItems.push({text:t.text,pi,ti,projName:proj.name,projColor:proj.color});
+      if(t.priority==='today' && !t.done){
+        const key = pi+'-'+ti;
+        rawItems.push({key,text:t.text,pi,ti,projName:proj.name,projColor:proj.color});
+      }
     });
   });
 
-  const todayCount = todayItems.length;
+  // Sort by todayOrder
+  const keyMap = {};
+  rawItems.forEach(i=>keyMap[i.key]=i);
+  const ordered = todayOrder.map(k=>keyMap[k]).filter(Boolean);
+  // Append any not in order
+  rawItems.forEach(i=>{ if(!todayOrder.includes(i.key)) ordered.push(i); });
+  const items = ordered;
+
+  const todayCount = items.length;
   let html = `
     <div class="pip-header">
       <span class="pip-title">TODAY</span>
@@ -964,31 +1064,70 @@ function updatePipContent(){
   if(!todayCount){
     html += '<div class="pip-empty">nothing for today</div>';
   } else {
-    const grouped = {};
-    todayItems.forEach(it=>{
-      if(!grouped[it.projName]) grouped[it.projName]={color:it.projColor,tasks:[]};
-      grouped[it.projName].tasks.push(it);
+    items.forEach((it,idx)=>{
+      html += `<div class="pip-task" data-idx="${idx}" draggable="true">
+        <span class="pip-drag">&#8942;</span>
+        <input type="checkbox" class="pip-cb" data-pi="${it.pi}" data-ti="${it.ti}">
+        <span>${esc(it.text)}</span>
+        <span style="font-size:9px;color:${it.projColor};margin-left:auto;flex-shrink:0">${esc(it.projName)}</span>
+      </div>`;
     });
-    for(const [name,g] of Object.entries(grouped)){
-      html += `<div class="pip-project" style="color:${g.color}">${esc(name)}</div>`;
-      g.tasks.forEach(it=>{
-        html += `<div class="pip-task" data-pi="${it.pi}" data-ti="${it.ti}">
-          <input type="checkbox" class="pip-cb" data-pi="${it.pi}" data-ti="${it.ti}">
-          <span>${esc(it.text)}</span>
-        </div>`;
-      });
-    }
   }
 
   root.innerHTML = html;
 
-  // Attach checkbox events
+  // Checkbox events
   root.querySelectorAll('.pip-cb').forEach(cb=>{
     cb.addEventListener('change', e=>{
       const pi=+cb.dataset.pi, ti=+cb.dataset.ti;
       projects[pi].tasks[ti].done = cb.checked;
       saveProjects();
       renderProjects();
+      renderToday();
+      updatePipContent();
+    });
+  });
+
+  // Drag reorder in PiP
+  let pipDragFrom = null;
+  const pipRows = root.querySelectorAll('.pip-task');
+  pipRows.forEach(row=>{
+    row.addEventListener('dragstart',e=>{
+      pipDragFrom = +row.dataset.idx;
+      row.classList.add('pip-dragging');
+      e.dataTransfer.effectAllowed='move';
+    });
+    row.addEventListener('dragend',()=>{
+      row.classList.remove('pip-dragging');
+      pipRows.forEach(r=>{r.classList.remove('pip-above');r.classList.remove('pip-below')});
+      pipDragFrom=null;
+    });
+    row.addEventListener('dragover',e=>{
+      e.preventDefault();
+      if(pipDragFrom===null) return;
+      const idx=+row.dataset.idx;
+      pipRows.forEach(r=>{r.classList.remove('pip-above');r.classList.remove('pip-below')});
+      if(idx<pipDragFrom) row.classList.add('pip-above');
+      else if(idx>pipDragFrom) row.classList.add('pip-below');
+    });
+    row.addEventListener('dragleave',()=>{
+      row.classList.remove('pip-above');row.classList.remove('pip-below');
+    });
+    row.addEventListener('drop',e=>{
+      e.preventDefault();
+      const toIdx=+row.dataset.idx;
+      if(pipDragFrom===null||pipDragFrom===toIdx) return;
+      // Reorder todayOrder using the items' keys
+      const fromKey = items[pipDragFrom].key;
+      const toKey = items[toIdx].key;
+      const fromOI = todayOrder.indexOf(fromKey);
+      const toOI = todayOrder.indexOf(toKey);
+      if(fromOI>-1){
+        todayOrder.splice(fromOI,1);
+        const newToOI = todayOrder.indexOf(toKey);
+        todayOrder.splice(newToOI>=0?newToOI:toOI,0,fromKey);
+        saveTodayOrder();
+      }
       renderToday();
       updatePipContent();
     });
@@ -1019,6 +1158,22 @@ function fallbackPopup(){
   });
   w.document.body.innerHTML = html || '<div style="color:#555;text-align:center;padding:30px">no tasks for today</div>';
 }
+
+// ---- FLYING EMOJI ----
+const EMOJIS = ['🚀','🎮','🎨','🔥','✨','💎','🌈','🦄','👾','🎯','🍕','🌙','⚡','🎸','🐙','🪐','🎪','🌊','🦋','🍀','🎲','🏄','🎭','🤖','👁️','🌸','🐉','🎵'];
+function flyEmoji(){
+  const el = document.createElement('div');
+  el.className = 'flying-emoji';
+  el.textContent = EMOJIS[Math.floor(Math.random()*EMOJIS.length)];
+  el.style.top = (Math.random()*80+5) + 'vh';
+  el.style.left = '-60px';
+  const dur = 12 + Math.random()*8;
+  el.style.animationDuration = dur + 's';
+  document.body.appendChild(el);
+  setTimeout(()=>el.remove(), dur*1000);
+}
+flyEmoji();
+setInterval(flyEmoji, 60000);
 
 // ---- INIT ----
 render();
