@@ -364,7 +364,10 @@ body{
   .today-card.empty{display:none}
   .topbar{height:40px;padding:0 10px}
   .app-name{font-size:12px;letter-spacing:2px}
-  .project-header{cursor:default}
+  .project-header{cursor:grab}
+  .project-col.mobile-dragging{opacity:.4}
+  .project-col.mobile-drag-above{border-top:2px solid var(--accent) !important}
+  .project-col.mobile-drag-below{border-bottom:2px solid var(--accent) !important}
   .btn-delete-project{opacity:1}
   .task-delete{opacity:.6}
   .priority-dots.no-priority{opacity:.8}
@@ -772,6 +775,47 @@ function attachEvents(){
         if(e.target.closest('.color-dot, .btn-delete-project, .color-popover, .color-swatch')) return;
         e.stopPropagation();
         startCardDrag(hdr.closest('.project-col'), pi, e);
+      });
+    });
+  }
+
+  // Mobile: drag reorder project cards
+  if(isMobile){
+    let mobDragIdx = null;
+    const cards = canvas.querySelectorAll('.project-col');
+    cards.forEach((card,i)=>{
+      card.setAttribute('draggable','true');
+      const hdr = card.querySelector('.project-header');
+      // Only start drag from header
+      card.addEventListener('dragstart', e=>{
+        if(!e.target.closest('.project-header')) { e.preventDefault(); return; }
+        mobDragIdx = i;
+        card.classList.add('mobile-dragging');
+        e.dataTransfer.effectAllowed='move';
+        e.dataTransfer.setData('text/plain',i);
+      });
+      card.addEventListener('dragend', ()=>{
+        card.classList.remove('mobile-dragging');
+        cards.forEach(c=>{c.classList.remove('mobile-drag-above');c.classList.remove('mobile-drag-below')});
+        mobDragIdx=null;
+      });
+      card.addEventListener('dragover', e=>{
+        e.preventDefault();
+        if(mobDragIdx===null||mobDragIdx===i) return;
+        cards.forEach(c=>{c.classList.remove('mobile-drag-above');c.classList.remove('mobile-drag-below')});
+        if(i<mobDragIdx) card.classList.add('mobile-drag-above');
+        else card.classList.add('mobile-drag-below');
+      });
+      card.addEventListener('dragleave', ()=>{
+        card.classList.remove('mobile-drag-above');card.classList.remove('mobile-drag-below');
+      });
+      card.addEventListener('drop', e=>{
+        e.preventDefault();
+        if(mobDragIdx===null||mobDragIdx===i) return;
+        const moved = projects.splice(mobDragIdx,1)[0];
+        projects.splice(i,0,moved);
+        saveProjects();
+        renderProjects();
       });
     });
   }
