@@ -167,6 +167,17 @@ body{
 }
 .project-col:hover .btn-delete-project{opacity:1}
 .btn-delete-project:hover{color:#ef4444}
+.btn-minimize{
+  background:none;border:none;color:var(--dimmer);cursor:pointer;
+  font-size:10px;opacity:0;transition:all .15s;padding:2px;
+}
+.project-col:hover .btn-minimize{opacity:1}
+.btn-minimize:hover{color:var(--text)}
+.project-col.collapsed .progress-bar,
+.project-col.collapsed .task-list,
+.project-col.collapsed .add-task-wrap{display:none}
+.project-col.collapsed{min-height:0;resize:none;overflow:hidden}
+.project-col.collapsed .project-header{border-bottom:none}
 
 /* TASK LIST */
 .task-list{padding:6px 0}
@@ -369,6 +380,7 @@ body{
   .project-col.mobile-drag-above{border-top:2px solid var(--accent) !important}
   .project-col.mobile-drag-below{border-bottom:2px solid var(--accent) !important}
   .btn-delete-project{opacity:1}
+  .btn-minimize{opacity:1}
   .task-delete{opacity:.6}
   .priority-dots.no-priority{opacity:.8}
   .today-drag-handle{opacity:.6}
@@ -712,6 +724,7 @@ function renderProjects(){
     const savedWidth = localStorage.getItem('accion_w_'+proj.id);
     const col = document.createElement('div');
     col.className = 'project-col';
+    if(proj.collapsed) col.classList.add('collapsed');
     col.style.left = (proj.x||0) + 'px';
     col.style.top = (proj.y||0) + 'px';
     if(proj.bg==='crazy') col.classList.add('crazy-bg');
@@ -725,6 +738,7 @@ function renderProjects(){
           <span style="color:${proj.color}">${esc(proj.name)}</span>
         </div>
         <div class="project-actions">
+          <button class="btn-minimize" data-pi="${pi}" title="${proj.collapsed?'Expand':'Minimize'}">${proj.collapsed?'&#9654;':'&#9660;'}</button>
           <button class="btn-delete-project" data-pi="${pi}" title="Delete project">&times;</button>
         </div>
       </div>
@@ -772,7 +786,7 @@ function attachEvents(){
       const pi = +hdr.dataset.drag;
       if(isNaN(pi)) return;
       hdr.addEventListener('pointerdown', e=>{
-        if(e.target.closest('.color-dot, .btn-delete-project, .color-popover, .color-swatch')) return;
+        if(e.target.closest('.color-dot, .btn-delete-project, .btn-minimize, .color-popover, .color-swatch')) return;
         e.stopPropagation();
         startCardDrag(hdr.closest('.project-col'), pi, e);
       });
@@ -898,6 +912,17 @@ function attachEvents(){
     });
   });
 
+  // Minimize toggle
+  document.querySelectorAll('.btn-minimize').forEach(btn=>{
+    btn.addEventListener('click', e=>{
+      e.stopPropagation();
+      const pi=+btn.dataset.pi;
+      projects[pi].collapsed = !projects[pi].collapsed;
+      saveProjects();
+      renderProjects();
+    });
+  });
+
   // Color dot -> open global popover
   const gPop = document.getElementById('globalPopover');
   document.querySelectorAll('.color-dot').forEach(dot=>{
@@ -1017,7 +1042,7 @@ document.getElementById('btnSignOut').addEventListener('click',()=>{
 function googleSignIn(){
   if(window.google && google.accounts){
     google.accounts.id.initialize({
-      client_id:'YOUR_GOOGLE_CLIENT_ID',
+      client_id:'414062244076-re2km0e60qf1k1g3rv9h6mbcd620if51.apps.googleusercontent.com',
       callback: handleCredentialResponse,
     });
     google.accounts.id.prompt();
@@ -1039,7 +1064,7 @@ function handleCredentialResponse(response){
 window.addEventListener('load',()=>{
   if(window.google && google.accounts){
     google.accounts.id.initialize({
-      client_id:'YOUR_GOOGLE_CLIENT_ID',
+      client_id:'414062244076-re2km0e60qf1k1g3rv9h6mbcd620if51.apps.googleusercontent.com',
       callback: handleCredentialResponse,
     });
   }
