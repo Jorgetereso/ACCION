@@ -790,6 +790,12 @@ function attachEvents(){
         e.stopPropagation();
         startCardDrag(hdr.closest('.project-col'), pi, e);
       });
+      hdr.addEventListener('dblclick', e=>{
+        if(e.target.closest('.color-dot, .btn-delete-project, .btn-minimize')) return;
+        projects[pi].collapsed = !projects[pi].collapsed;
+        saveProjects();
+        renderProjects();
+      });
     });
   }
 
