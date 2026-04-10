@@ -399,59 +399,153 @@ body{
 .top-tab:hover{color:var(--text);border-color:var(--border)}
 .top-tab.active{color:var(--accent);border-color:var(--accent);background:rgba(59,130,246,.08)}
 
-/* AI TOOLS VIEW */
+/* AI TOOLS VIEW - NODE EDITOR */
 .ai-view{
   position:absolute;top:0;left:0;right:0;bottom:0;
-  display:none;overflow:auto;padding:30px;
-  background:var(--bg);
+  display:none;background:#070707;overflow:hidden;
+  background-image:radial-gradient(circle,#161616 1px,transparent 1px);
+  background-size:24px 24px;
 }
 .ai-view.active{display:block}
-.ai-view-inner{max-width:900px;margin:0 auto;display:flex;flex-direction:column;gap:24px}
-.ai-tool{
-  background:var(--bg1);border:1px solid var(--border);border-radius:8px;
-  padding:20px;
+.ai-canvas-wrap{
+  position:absolute;inset:0;cursor:grab;overflow:hidden;
 }
-.ai-tool h2{
-  font-size:13px;font-weight:600;letter-spacing:2px;color:var(--accent);
-  margin-bottom:4px;text-transform:uppercase;
+.ai-canvas-wrap.panning{cursor:grabbing}
+.ai-canvas{
+  position:absolute;top:0;left:0;width:1px;height:1px;
+  transform-origin:0 0;
 }
-.ai-tool .ai-tool-sub{
-  font-size:11px;color:var(--dim);margin-bottom:14px;
+.ai-wires{
+  position:absolute;top:0;left:0;width:100%;height:100%;
+  pointer-events:none;overflow:visible;
 }
-.ai-prompt{
-  width:100%;background:var(--bg);border:1px solid var(--border);
-  color:var(--text);font-family:inherit;font-size:12px;padding:10px 12px;
-  border-radius:6px;outline:none;resize:vertical;min-height:70px;
-  transition:border-color .15s;margin-bottom:10px;
+.ai-node{
+  position:absolute;
+  background:#111;border:1px solid #2a2a2a;border-radius:8px;
+  width:240px;display:flex;flex-direction:column;
+  box-shadow:0 4px 16px rgba(0,0,0,.5);
+  font-size:11px;color:var(--text);
+  transition:border-color .15s,box-shadow .15s;
+  z-index:1;
 }
-.ai-prompt:focus{border-color:var(--accent)}
-.ai-controls{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
-.ai-btn{
-  background:var(--accent);border:none;color:#fff;
-  font-family:inherit;font-size:11px;letter-spacing:1px;
-  padding:8px 18px;border-radius:5px;cursor:pointer;
+.ai-node:hover{border-color:#3a3a3a}
+.ai-node.selected{border-color:var(--accent);box-shadow:0 0 0 1px var(--accent),0 4px 20px rgba(59,130,246,.25)}
+.ai-node.dragging{opacity:.92;z-index:10}
+.ai-node-header{
+  padding:8px 12px;display:flex;align-items:center;justify-content:space-between;
+  border-bottom:1px solid #1f1f1f;cursor:grab;
+  border-radius:8px 8px 0 0;
+  background:linear-gradient(90deg, var(--node-color, #3b82f6) 0%, transparent 60%);
+  background-color:#161616;
+}
+.ai-node-title{
+  font-size:10px;font-weight:600;letter-spacing:1.5px;text-transform:uppercase;
+  color:#fff;
+}
+.ai-node-del{
+  background:none;border:none;color:#666;cursor:pointer;font-size:13px;
+  padding:0 2px;opacity:0;transition:opacity .15s;
+}
+.ai-node:hover .ai-node-del{opacity:1}
+.ai-node-del:hover{color:#ef4444}
+.ai-node-body{padding:10px 12px;position:relative}
+.ai-node-prompt{
+  width:100%;background:#0a0a0a;border:1px solid #222;
+  color:var(--text);font-family:inherit;font-size:11px;padding:8px 10px;
+  border-radius:4px;outline:none;resize:vertical;min-height:60px;
+}
+.ai-node-prompt:focus{border-color:var(--accent)}
+.ai-node-preview{
+  width:100%;min-height:120px;background:#0a0a0a;border:1px dashed #222;
+  border-radius:4px;display:flex;align-items:center;justify-content:center;
+  color:#444;font-size:10px;letter-spacing:1px;text-transform:uppercase;
+  overflow:hidden;
+}
+.ai-node-preview img,.ai-node-preview video{max-width:100%;max-height:200px;border-radius:3px}
+.ai-node-info{
+  font-size:10px;color:var(--dim);line-height:1.6;
+}
+.ai-node-info b{color:var(--text);font-weight:500}
+.ai-node-run{
+  width:100%;background:var(--accent);border:none;color:#fff;
+  font-family:inherit;font-size:10px;letter-spacing:1.5px;
+  padding:7px 0;border-radius:4px;cursor:pointer;
+  margin-top:8px;text-transform:uppercase;transition:background .15s;
+}
+.ai-node-run:hover{background:#2563eb}
+
+/* PORTS */
+.ai-port{
+  position:absolute;width:14px;height:14px;border-radius:50%;
+  background:#0a0a0a;border:2px solid var(--port-color, #555);
+  cursor:crosshair;transition:all .12s;
+  z-index:5;
+}
+.ai-port:hover{transform:scale(1.3);background:var(--port-color, #555)}
+.ai-port.input{left:-8px;top:50%;transform:translateY(-50%)}
+.ai-port.input:hover{transform:translateY(-50%) scale(1.3)}
+.ai-port.output{right:-8px;top:50%;transform:translateY(-50%)}
+.ai-port.output:hover{transform:translateY(-50%) scale(1.3)}
+.ai-port-label{
+  position:absolute;font-size:9px;color:#555;letter-spacing:1px;
+  text-transform:uppercase;pointer-events:none;white-space:nowrap;
+  top:50%;transform:translateY(-50%);
+}
+.ai-port.input .ai-port-label{left:14px}
+.ai-port.output .ai-port-label{right:14px}
+
+/* Port type colors */
+.ai-port.type-text{--port-color:#a78bfa}
+.ai-port.type-image{--port-color:#22d3ee}
+.ai-port.type-video{--port-color:#f59e0b}
+
+/* Node type accent colors */
+.ai-node.type-prompt{--node-color:#a78bfa}
+.ai-node.type-image_model{--node-color:#22d3ee}
+.ai-node.type-video_model{--node-color:#f59e0b}
+.ai-node.type-image_output,.ai-node.type-video_output{--node-color:#10b981}
+.ai-node.type-upload_image{--node-color:#ec4899}
+
+/* WIRE STYLE */
+.ai-wire{
+  fill:none;stroke:#3b82f6;stroke-width:2;
+  filter:drop-shadow(0 0 4px rgba(59,130,246,.4));
+  pointer-events:stroke;
+}
+.ai-wire.text{stroke:#a78bfa;filter:drop-shadow(0 0 4px rgba(167,139,250,.4))}
+.ai-wire.image{stroke:#22d3ee;filter:drop-shadow(0 0 4px rgba(34,211,238,.4))}
+.ai-wire.video{stroke:#f59e0b;filter:drop-shadow(0 0 4px rgba(245,158,11,.4))}
+.ai-wire-temp{stroke-dasharray:4 4;opacity:.7}
+
+/* TOOLBAR */
+.ai-toolbar{
+  position:absolute;left:50%;bottom:24px;transform:translateX(-50%);
+  display:flex;gap:6px;background:#111;border:1px solid #2a2a2a;
+  border-radius:10px;padding:8px;z-index:50;
+  box-shadow:0 8px 32px rgba(0,0,0,.6);
+}
+.ai-tool-btn{
+  background:#1a1a1a;border:1px solid #2a2a2a;color:var(--dim);
+  font-family:inherit;font-size:10px;letter-spacing:1px;
+  padding:8px 12px;border-radius:6px;cursor:pointer;
   transition:all .15s;text-transform:uppercase;
+  display:flex;align-items:center;gap:6px;
 }
-.ai-btn:hover{background:#2563eb}
-.ai-btn:disabled{background:var(--bg2);color:var(--dimmer);cursor:not-allowed}
-.ai-status{font-size:11px;color:var(--dim);margin-left:4px}
-.ai-result{
-  margin-top:14px;border:1px solid var(--border);border-radius:6px;
-  padding:14px;background:var(--bg);min-height:60px;
-  display:flex;align-items:center;justify-content:center;
+.ai-tool-btn:hover{background:#222;color:var(--text);border-color:#3a3a3a}
+.ai-tool-btn .dot{width:8px;height:8px;border-radius:50%;background:var(--btn-c, #555)}
+.ai-tool-btn[data-type="prompt"] .dot{background:#a78bfa}
+.ai-tool-btn[data-type="image_model"] .dot{background:#22d3ee}
+.ai-tool-btn[data-type="video_model"] .dot{background:#f59e0b}
+.ai-tool-btn[data-type="image_output"] .dot{background:#10b981}
+.ai-tool-btn[data-type="video_output"] .dot{background:#10b981}
+.ai-tool-btn[data-type="upload_image"] .dot{background:#ec4899}
+
+/* Hint text */
+.ai-hint{
+  position:absolute;top:60px;left:50%;transform:translateX(-50%);
+  color:#333;font-size:11px;letter-spacing:2px;text-transform:uppercase;
+  pointer-events:none;
 }
-.ai-result.empty{color:var(--dimmer);font-size:11px}
-.ai-result img,.ai-result video{max-width:100%;border-radius:4px}
-.ai-key-row{
-  display:flex;gap:8px;align-items:center;margin-bottom:14px;
-  font-size:11px;color:var(--dim);
-}
-.ai-key-row input{
-  flex:1;background:var(--bg);border:1px solid var(--border);
-  color:var(--text);font-family:inherit;font-size:11px;padding:6px 10px;
-  border-radius:4px;outline:none;
-}
-.ai-key-row input:focus{border-color:var(--accent)}
 
 .flying-emoji{
   position:fixed;z-index:0;pointer-events:none;
@@ -471,7 +565,7 @@ body{
     <span class="app-name">ACCION</span>
     <button class="btn-add-project" id="btnAddProject" title="Add project">+</button>
     <div class="top-tabs">
-      <button class="top-tab active" data-view="projects">Projects</button>
+      <button class="top-tab active" data-view="projects">Tasks</button>
       <button class="top-tab" data-view="ai">AI Tools</button>
     </div>
   </div>
@@ -498,40 +592,20 @@ body{
   </div>
 </div>
 
-<!-- AI TOOLS VIEW -->
+<!-- AI TOOLS VIEW - NODE EDITOR -->
 <div class="ai-view" id="aiView">
-  <div class="ai-view-inner">
-
-    <div class="ai-tool">
-      <h2>Nano Banana Pro &mdash; Image</h2>
-      <div class="ai-tool-sub">Generate images with Google Gemini 2.5 image model</div>
-      <div class="ai-key-row">
-        <span>Gemini API key:</span>
-        <input type="password" id="geminiKey" placeholder="paste your key">
-      </div>
-      <textarea class="ai-prompt" id="imagePrompt" placeholder="describe the image you want..."></textarea>
-      <div class="ai-controls">
-        <button class="ai-btn" id="btnGenImage">Generate</button>
-        <span class="ai-status" id="imageStatus"></span>
-      </div>
-      <div class="ai-result empty" id="imageResult">no image yet</div>
+  <div class="ai-canvas-wrap" id="aiCanvasWrap">
+    <svg class="ai-wires" id="aiWires"></svg>
+    <div class="ai-canvas" id="aiCanvas"></div>
+    <div class="ai-hint">drag nodes from the toolbar &middot; connect ports &middot; build your flow</div>
+    <div class="ai-toolbar">
+      <button class="ai-tool-btn" data-type="prompt"><span class="dot"></span>Prompt</button>
+      <button class="ai-tool-btn" data-type="upload_image"><span class="dot"></span>Image In</button>
+      <button class="ai-tool-btn" data-type="image_model"><span class="dot"></span>Nano Banana Pro</button>
+      <button class="ai-tool-btn" data-type="video_model"><span class="dot"></span>Seedance 2.0</button>
+      <button class="ai-tool-btn" data-type="image_output"><span class="dot"></span>Image Out</button>
+      <button class="ai-tool-btn" data-type="video_output"><span class="dot"></span>Video Out</button>
     </div>
-
-    <div class="ai-tool">
-      <h2>Seedance 2.0 &mdash; Video</h2>
-      <div class="ai-tool-sub">Generate videos with ByteDance Seedance via fal.ai</div>
-      <div class="ai-key-row">
-        <span>fal.ai API key:</span>
-        <input type="password" id="falKey" placeholder="paste your key">
-      </div>
-      <textarea class="ai-prompt" id="videoPrompt" placeholder="describe the video you want..."></textarea>
-      <div class="ai-controls">
-        <button class="ai-btn" id="btnGenVideo">Generate</button>
-        <span class="ai-status" id="videoStatus"></span>
-      </div>
-      <div class="ai-result empty" id="videoResult">no video yet</div>
-    </div>
-
   </div>
 </div>
 
@@ -1147,103 +1221,333 @@ document.querySelectorAll('.top-tab').forEach(t=>{
 const savedView = localStorage.getItem('accion_view');
 if(savedView==='ai') switchView('ai');
 
-// ---- AI TOOLS ----
-const geminiKeyInput = document.getElementById('geminiKey');
-const falKeyInput = document.getElementById('falKey');
-geminiKeyInput.value = localStorage.getItem('accion_gemini_key') || '';
-falKeyInput.value = localStorage.getItem('accion_fal_key') || '';
-geminiKeyInput.addEventListener('change',()=>localStorage.setItem('accion_gemini_key',geminiKeyInput.value.trim()));
-falKeyInput.addEventListener('change',()=>localStorage.setItem('accion_fal_key',falKeyInput.value.trim()));
+// ---- AI NODE EDITOR ----
+const aiCanvasWrap = document.getElementById('aiCanvasWrap');
+const aiCanvas = document.getElementById('aiCanvas');
+const aiWires = document.getElementById('aiWires');
 
-// Image generation - Nano Banana Pro (Gemini 2.5 Flash Image)
-document.getElementById('btnGenImage').addEventListener('click', async ()=>{
-  const key = geminiKeyInput.value.trim();
-  const prompt = document.getElementById('imagePrompt').value.trim();
-  const status = document.getElementById('imageStatus');
-  const result = document.getElementById('imageResult');
-  const btn = document.getElementById('btnGenImage');
-  if(!key){ status.textContent='need a Gemini API key'; return; }
-  if(!prompt){ status.textContent='write a prompt'; return; }
-  btn.disabled=true; status.textContent='generating...'; result.classList.add('empty'); result.textContent='generating...';
-  try{
-    const resp = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-image-preview:generateContent?key=${encodeURIComponent(key)}`, {
-      method:'POST',
-      headers:{'Content-Type':'application/json'},
-      body: JSON.stringify({
-        contents:[{parts:[{text:prompt}]}],
-        generationConfig:{responseModalities:['IMAGE','TEXT']}
-      })
-    });
-    if(!resp.ok){ throw new Error('HTTP '+resp.status+' '+(await resp.text()).slice(0,200)); }
-    const data = await resp.json();
-    const parts = data?.candidates?.[0]?.content?.parts || [];
-    const imgPart = parts.find(p=>p.inlineData?.data);
-    if(!imgPart){ throw new Error('no image in response'); }
-    const mime = imgPart.inlineData.mimeType || 'image/png';
-    const src = `data:${mime};base64,${imgPart.inlineData.data}`;
-    result.classList.remove('empty');
-    result.innerHTML = `<img src="${src}" alt="generated">`;
-    status.textContent='done';
-  } catch(err){
-    status.textContent='error: '+err.message;
-    result.classList.add('empty');
-    result.textContent='failed';
-  } finally {
-    btn.disabled=false;
-  }
-});
+const NODE_DEFS = {
+  prompt:       {title:'Prompt', inputs:[], outputs:[{name:'text', type:'text'}]},
+  upload_image: {title:'Image In', inputs:[], outputs:[{name:'image', type:'image'}]},
+  image_model:  {title:'Nano Banana Pro', inputs:[{name:'prompt', type:'text'},{name:'ref', type:'image'}], outputs:[{name:'image', type:'image'}]},
+  video_model:  {title:'Seedance 2.0', inputs:[{name:'prompt', type:'text'},{name:'ref', type:'image'}], outputs:[{name:'video', type:'video'}]},
+  image_output: {title:'Image Output', inputs:[{name:'image', type:'image'}], outputs:[]},
+  video_output: {title:'Video Output', inputs:[{name:'video', type:'video'}], outputs:[]},
+};
 
-// Video generation - Seedance 2.0 via fal.ai
-document.getElementById('btnGenVideo').addEventListener('click', async ()=>{
-  const key = falKeyInput.value.trim();
-  const prompt = document.getElementById('videoPrompt').value.trim();
-  const status = document.getElementById('videoStatus');
-  const result = document.getElementById('videoResult');
-  const btn = document.getElementById('btnGenVideo');
-  if(!key){ status.textContent='need a fal.ai API key'; return; }
-  if(!prompt){ status.textContent='write a prompt'; return; }
-  btn.disabled=true; status.textContent='submitting...'; result.classList.add('empty'); result.textContent='submitting...';
-  try{
-    // Submit to fal.ai queue
-    const submit = await fetch('https://queue.fal.run/fal-ai/bytedance/seedance/v1/pro/text-to-video', {
-      method:'POST',
-      headers:{'Content-Type':'application/json','Authorization':'Key '+key},
-      body: JSON.stringify({prompt, resolution:'1080p', duration:'5'})
-    });
-    if(!submit.ok){ throw new Error('HTTP '+submit.status+' '+(await submit.text()).slice(0,200)); }
-    const submitData = await submit.json();
-    const statusUrl = submitData.status_url;
-    const responseUrl = submitData.response_url;
-    if(!statusUrl || !responseUrl){ throw new Error('no queue urls'); }
-    // Poll for completion
-    let done = false;
-    let attempts = 0;
-    while(!done && attempts < 120){
-      await new Promise(r=>setTimeout(r,3000));
-      attempts++;
-      const st = await fetch(statusUrl, {headers:{'Authorization':'Key '+key}});
-      const stData = await st.json();
-      status.textContent = 'status: '+(stData.status||'?')+' ('+attempts+')';
-      result.textContent = 'generating... '+(attempts*3)+'s';
-      if(stData.status === 'COMPLETED'){ done = true; break; }
-      if(stData.status === 'FAILED'){ throw new Error('generation failed'); }
+let aiNodes = JSON.parse(localStorage.getItem('accion_ai_nodes') || '[]');
+let aiConns = JSON.parse(localStorage.getItem('accion_ai_conns') || '[]');
+let aiPan = JSON.parse(localStorage.getItem('accion_ai_pan') || '{"x":0,"y":0,"z":1}');
+let aiNodeId = 1;
+aiNodes.forEach(n => { if(n.id >= aiNodeId) aiNodeId = n.id + 1; });
+
+function saveAi(){
+  localStorage.setItem('accion_ai_nodes', JSON.stringify(aiNodes));
+  localStorage.setItem('accion_ai_conns', JSON.stringify(aiConns));
+}
+function saveAiPan(){
+  localStorage.setItem('accion_ai_pan', JSON.stringify(aiPan));
+}
+function updateAiTransform(){
+  aiCanvas.style.transform = `translate(${aiPan.x}px,${aiPan.y}px) scale(${aiPan.z})`;
+  renderAiWires();
+}
+
+function addAiNode(type, x, y){
+  const def = NODE_DEFS[type];
+  if(!def) return;
+  const node = {
+    id: aiNodeId++,
+    type,
+    x: x ?? (200 - aiPan.x)/aiPan.z,
+    y: y ?? (200 - aiPan.y)/aiPan.z,
+    data: { prompt: '' }
+  };
+  aiNodes.push(node);
+  saveAi();
+  renderAi();
+}
+
+function deleteAiNode(id){
+  aiNodes = aiNodes.filter(n => n.id !== id);
+  aiConns = aiConns.filter(c => c.from.node !== id && c.to.node !== id);
+  saveAi();
+  renderAi();
+}
+
+function renderAi(){
+  aiCanvas.querySelectorAll('.ai-node').forEach(el => el.remove());
+  aiNodes.forEach(node => {
+    const def = NODE_DEFS[node.type];
+    const el = document.createElement('div');
+    el.className = 'ai-node type-' + node.type;
+    el.dataset.id = node.id;
+    el.style.left = node.x + 'px';
+    el.style.top = node.y + 'px';
+
+    let bodyHtml = '';
+    if(node.type === 'prompt'){
+      bodyHtml = `<textarea class="ai-node-prompt" placeholder="describe...">${esc(node.data.prompt||'')}</textarea>`;
+    } else if(node.type === 'upload_image'){
+      bodyHtml = `<div class="ai-node-preview">${node.data.src?`<img src="${node.data.src}">`:'click to upload'}</div>`;
+    } else if(node.type === 'image_model'){
+      bodyHtml = `<div class="ai-node-info">Gemini 2.5 Flash Image<br><b>resolution:</b> 1024&times;1024</div><button class="ai-node-run">Run</button>`;
+    } else if(node.type === 'video_model'){
+      bodyHtml = `<div class="ai-node-info">ByteDance Seedance 2.0<br><b>duration:</b> 5s &middot; <b>res:</b> 1080p</div><button class="ai-node-run">Run</button>`;
+    } else if(node.type === 'image_output'){
+      bodyHtml = `<div class="ai-node-preview">${node.data.src?`<img src="${node.data.src}">`:'awaiting image'}</div>`;
+    } else if(node.type === 'video_output'){
+      bodyHtml = `<div class="ai-node-preview">${node.data.src?`<video src="${node.data.src}" controls></video>`:'awaiting video'}</div>`;
     }
-    if(!done){ throw new Error('timed out'); }
-    const final = await fetch(responseUrl, {headers:{'Authorization':'Key '+key}});
-    const finalData = await final.json();
-    const videoUrl = finalData?.video?.url;
-    if(!videoUrl){ throw new Error('no video url in response'); }
-    result.classList.remove('empty');
-    result.innerHTML = `<video src="${videoUrl}" controls autoplay loop></video>`;
-    status.textContent='done';
-  } catch(err){
-    status.textContent='error: '+err.message;
-    result.classList.add('empty');
-    result.textContent='failed';
-  } finally {
-    btn.disabled=false;
+
+    el.innerHTML = `
+      <div class="ai-node-header">
+        <span class="ai-node-title">${def.title}</span>
+        <button class="ai-node-del" data-del="${node.id}">&times;</button>
+      </div>
+      <div class="ai-node-body">${bodyHtml}</div>
+    `;
+
+    // Ports - positioned vertically
+    const portSpacing = 22;
+    def.inputs.forEach((p, i) => {
+      const port = document.createElement('div');
+      port.className = 'ai-port input type-' + p.type;
+      port.dataset.node = node.id;
+      port.dataset.port = p.name;
+      port.dataset.dir = 'in';
+      port.dataset.ptype = p.type;
+      port.style.top = (44 + i*portSpacing) + 'px';
+      port.innerHTML = `<span class="ai-port-label">${p.name}</span>`;
+      el.appendChild(port);
+    });
+    def.outputs.forEach((p, i) => {
+      const port = document.createElement('div');
+      port.className = 'ai-port output type-' + p.type;
+      port.dataset.node = node.id;
+      port.dataset.port = p.name;
+      port.dataset.dir = 'out';
+      port.dataset.ptype = p.type;
+      port.style.top = (44 + i*portSpacing) + 'px';
+      port.innerHTML = `<span class="ai-port-label">${p.name}</span>`;
+      el.appendChild(port);
+    });
+
+    aiCanvas.appendChild(el);
+  });
+
+  // Attach node interactions
+  aiCanvas.querySelectorAll('.ai-node').forEach(el => {
+    const id = +el.dataset.id;
+    const node = aiNodes.find(n => n.id === id);
+    const hdr = el.querySelector('.ai-node-header');
+
+    // Drag node
+    hdr.addEventListener('pointerdown', e => {
+      if(e.target.closest('.ai-node-del, .ai-port')) return;
+      e.stopPropagation();
+      el.classList.add('dragging');
+      const startX = e.clientX, startY = e.clientY;
+      const startNX = node.x, startNY = node.y;
+      const onMove = ev => {
+        node.x = startNX + (ev.clientX - startX) / aiPan.z;
+        node.y = startNY + (ev.clientY - startY) / aiPan.z;
+        el.style.left = node.x + 'px';
+        el.style.top = node.y + 'px';
+        renderAiWires();
+      };
+      const onUp = () => {
+        el.classList.remove('dragging');
+        document.removeEventListener('pointermove', onMove);
+        document.removeEventListener('pointerup', onUp);
+        saveAi();
+      };
+      document.addEventListener('pointermove', onMove);
+      document.addEventListener('pointerup', onUp);
+    });
+
+    // Delete
+    el.querySelector('.ai-node-del')?.addEventListener('click', e => {
+      e.stopPropagation();
+      deleteAiNode(id);
+    });
+
+    // Prompt input
+    const ta = el.querySelector('.ai-node-prompt');
+    if(ta){
+      ta.addEventListener('input', () => { node.data.prompt = ta.value; saveAi(); });
+      ta.addEventListener('pointerdown', e => e.stopPropagation());
+    }
+
+    // Upload image
+    if(node.type === 'upload_image'){
+      const preview = el.querySelector('.ai-node-preview');
+      preview.style.cursor = 'pointer';
+      preview.addEventListener('click', () => {
+        const inp = document.createElement('input');
+        inp.type = 'file'; inp.accept = 'image/*';
+        inp.onchange = e => {
+          const f = e.target.files[0]; if(!f) return;
+          const r = new FileReader();
+          r.onload = ev => { node.data.src = ev.target.result; saveAi(); renderAi(); };
+          r.readAsDataURL(f);
+        };
+        inp.click();
+      });
+    }
+
+    // Run button (placeholder - shows pending state)
+    const runBtn = el.querySelector('.ai-node-run');
+    if(runBtn){
+      runBtn.addEventListener('click', e => {
+        e.stopPropagation();
+        runBtn.textContent = 'Running...';
+        runBtn.disabled = true;
+        setTimeout(() => {
+          runBtn.textContent = 'Run';
+          runBtn.disabled = false;
+          alert('API not connected yet — this is a preview of the node system.');
+        }, 800);
+      });
+    }
+
+    // Port drag to create connection
+    el.querySelectorAll('.ai-port').forEach(port => {
+      port.addEventListener('pointerdown', e => {
+        e.stopPropagation();
+        startWireDrag(port, e);
+      });
+    });
+  });
+
+  renderAiWires();
+}
+
+function getPortPos(nodeId, portName, dir){
+  const port = aiCanvas.querySelector(`.ai-port[data-node="${nodeId}"][data-port="${portName}"][data-dir="${dir}"]`);
+  if(!port) return null;
+  const node = port.closest('.ai-node');
+  const nx = parseFloat(node.style.left), ny = parseFloat(node.style.top);
+  const px = port.offsetLeft + 7;
+  const py = port.offsetTop + 7;
+  return { x: nx + px, y: ny + py };
+}
+
+function renderAiWires(){
+  // Get canvas size to compute viewBox
+  const rect = aiCanvasWrap.getBoundingClientRect();
+  aiWires.setAttribute('width', rect.width);
+  aiWires.setAttribute('height', rect.height);
+  aiWires.innerHTML = '';
+  // Add a transform group to match canvas pan/zoom
+  const g = document.createElementNS('http://www.w3.org/2000/svg','g');
+  g.setAttribute('transform', `translate(${aiPan.x},${aiPan.y}) scale(${aiPan.z})`);
+  aiConns.forEach(c => {
+    const a = getPortPos(c.from.node, c.from.port, 'out');
+    const b = getPortPos(c.to.node, c.to.port, 'in');
+    if(!a || !b) return;
+    const path = document.createElementNS('http://www.w3.org/2000/svg','path');
+    const dx = Math.abs(b.x - a.x) * 0.5;
+    path.setAttribute('d', `M ${a.x} ${a.y} C ${a.x+dx} ${a.y}, ${b.x-dx} ${b.y}, ${b.x} ${b.y}`);
+    path.setAttribute('class', 'ai-wire ' + (c.type||''));
+    g.appendChild(path);
+  });
+  aiWires.appendChild(g);
+}
+
+let dragWire = null;
+function startWireDrag(port, e){
+  const fromDir = port.dataset.dir;
+  const fromNode = +port.dataset.node;
+  const fromPort = port.dataset.port;
+  const fromType = port.dataset.ptype;
+  const startPos = getPortPos(fromNode, fromPort, fromDir);
+
+  const tempG = document.createElementNS('http://www.w3.org/2000/svg','g');
+  tempG.setAttribute('transform', `translate(${aiPan.x},${aiPan.y}) scale(${aiPan.z})`);
+  const tempPath = document.createElementNS('http://www.w3.org/2000/svg','path');
+  tempPath.setAttribute('class', 'ai-wire ai-wire-temp ' + fromType);
+  tempG.appendChild(tempPath);
+  aiWires.appendChild(tempG);
+
+  const onMove = ev => {
+    const wrapRect = aiCanvasWrap.getBoundingClientRect();
+    const mx = (ev.clientX - wrapRect.left - aiPan.x) / aiPan.z;
+    const my = (ev.clientY - wrapRect.top - aiPan.y) / aiPan.z;
+    const a = fromDir === 'out' ? startPos : {x:mx,y:my};
+    const b = fromDir === 'out' ? {x:mx,y:my} : startPos;
+    const dx = Math.abs(b.x - a.x) * 0.5;
+    tempPath.setAttribute('d', `M ${a.x} ${a.y} C ${a.x+dx} ${a.y}, ${b.x-dx} ${b.y}, ${b.x} ${b.y}`);
+  };
+  const onUp = ev => {
+    document.removeEventListener('pointermove', onMove);
+    document.removeEventListener('pointerup', onUp);
+    tempG.remove();
+    // Check if dropped on a compatible port
+    const target = document.elementFromPoint(ev.clientX, ev.clientY);
+    const targetPort = target?.closest('.ai-port');
+    if(targetPort && targetPort !== port){
+      const tDir = targetPort.dataset.dir;
+      const tType = targetPort.dataset.ptype;
+      const tNode = +targetPort.dataset.node;
+      const tPort = targetPort.dataset.port;
+      if(tDir !== fromDir && tType === fromType){
+        const conn = fromDir === 'out'
+          ? { from:{node:fromNode,port:fromPort}, to:{node:tNode,port:tPort}, type:fromType }
+          : { from:{node:tNode,port:tPort}, to:{node:fromNode,port:fromPort}, type:fromType };
+        // Remove existing connection to same input
+        aiConns = aiConns.filter(c => !(c.to.node === conn.to.node && c.to.port === conn.to.port));
+        aiConns.push(conn);
+        saveAi();
+        renderAiWires();
+      }
+    }
+  };
+  document.addEventListener('pointermove', onMove);
+  document.addEventListener('pointerup', onUp);
+}
+
+// Toolbar - add nodes
+document.querySelectorAll('.ai-tool-btn').forEach(btn => {
+  btn.addEventListener('click', () => addAiNode(btn.dataset.type));
+});
+
+// Pan AI canvas
+let aiPanning = false, aiPanStartX, aiPanStartY;
+aiCanvasWrap.addEventListener('pointerdown', e => {
+  if(e.target === aiCanvasWrap || e.target === aiCanvas || e.target === aiWires){
+    aiPanning = true;
+    aiPanStartX = e.clientX - aiPan.x;
+    aiPanStartY = e.clientY - aiPan.y;
+    aiCanvasWrap.classList.add('panning');
   }
 });
+aiCanvasWrap.addEventListener('pointermove', e => {
+  if(!aiPanning) return;
+  aiPan.x = e.clientX - aiPanStartX;
+  aiPan.y = e.clientY - aiPanStartY;
+  updateAiTransform();
+});
+aiCanvasWrap.addEventListener('pointerup', () => {
+  if(aiPanning){ aiPanning = false; aiCanvasWrap.classList.remove('panning'); saveAiPan(); }
+});
+aiCanvasWrap.addEventListener('wheel', e => {
+  e.preventDefault();
+  const delta = e.deltaY > 0 ? 0.92 : 1.08;
+  const newZoom = Math.max(0.3, Math.min(2.5, aiPan.z * delta));
+  const wrapRect = aiCanvasWrap.getBoundingClientRect();
+  const mx = e.clientX - wrapRect.left;
+  const my = e.clientY - wrapRect.top;
+  aiPan.x = mx - (mx - aiPan.x) * (newZoom / aiPan.z);
+  aiPan.y = my - (my - aiPan.y) * (newZoom / aiPan.z);
+  aiPan.z = newZoom;
+  updateAiTransform();
+  saveAiPan();
+}, {passive: false});
+
+window.addEventListener('resize', renderAiWires);
+updateAiTransform();
+renderAi();
 
 // ---- SETTINGS ----
 const settingsDropdown = document.getElementById('settingsDropdown');
