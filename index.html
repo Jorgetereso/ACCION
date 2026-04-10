@@ -388,6 +388,71 @@ body{
   .flying-emoji{display:none}
   #btnPip{display:none}
 }
+/* TOP TABS */
+.top-tabs{display:flex;gap:4px;margin-left:8px}
+.top-tab{
+  background:none;border:1px solid transparent;color:var(--dim);
+  font-family:inherit;font-size:11px;letter-spacing:1.5px;
+  padding:4px 10px;border-radius:4px;cursor:pointer;
+  transition:all .15s;text-transform:uppercase;
+}
+.top-tab:hover{color:var(--text);border-color:var(--border)}
+.top-tab.active{color:var(--accent);border-color:var(--accent);background:rgba(59,130,246,.08)}
+
+/* AI TOOLS VIEW */
+.ai-view{
+  position:absolute;top:0;left:0;right:0;bottom:0;
+  display:none;overflow:auto;padding:30px;
+  background:var(--bg);
+}
+.ai-view.active{display:block}
+.ai-view-inner{max-width:900px;margin:0 auto;display:flex;flex-direction:column;gap:24px}
+.ai-tool{
+  background:var(--bg1);border:1px solid var(--border);border-radius:8px;
+  padding:20px;
+}
+.ai-tool h2{
+  font-size:13px;font-weight:600;letter-spacing:2px;color:var(--accent);
+  margin-bottom:4px;text-transform:uppercase;
+}
+.ai-tool .ai-tool-sub{
+  font-size:11px;color:var(--dim);margin-bottom:14px;
+}
+.ai-prompt{
+  width:100%;background:var(--bg);border:1px solid var(--border);
+  color:var(--text);font-family:inherit;font-size:12px;padding:10px 12px;
+  border-radius:6px;outline:none;resize:vertical;min-height:70px;
+  transition:border-color .15s;margin-bottom:10px;
+}
+.ai-prompt:focus{border-color:var(--accent)}
+.ai-controls{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.ai-btn{
+  background:var(--accent);border:none;color:#fff;
+  font-family:inherit;font-size:11px;letter-spacing:1px;
+  padding:8px 18px;border-radius:5px;cursor:pointer;
+  transition:all .15s;text-transform:uppercase;
+}
+.ai-btn:hover{background:#2563eb}
+.ai-btn:disabled{background:var(--bg2);color:var(--dimmer);cursor:not-allowed}
+.ai-status{font-size:11px;color:var(--dim);margin-left:4px}
+.ai-result{
+  margin-top:14px;border:1px solid var(--border);border-radius:6px;
+  padding:14px;background:var(--bg);min-height:60px;
+  display:flex;align-items:center;justify-content:center;
+}
+.ai-result.empty{color:var(--dimmer);font-size:11px}
+.ai-result img,.ai-result video{max-width:100%;border-radius:4px}
+.ai-key-row{
+  display:flex;gap:8px;align-items:center;margin-bottom:14px;
+  font-size:11px;color:var(--dim);
+}
+.ai-key-row input{
+  flex:1;background:var(--bg);border:1px solid var(--border);
+  color:var(--text);font-family:inherit;font-size:11px;padding:6px 10px;
+  border-radius:4px;outline:none;
+}
+.ai-key-row input:focus{border-color:var(--accent)}
+
 .flying-emoji{
   position:fixed;z-index:0;pointer-events:none;
   font-size:40px;opacity:.1;
@@ -405,6 +470,10 @@ body{
   <div class="topbar-left">
     <span class="app-name">ACCION</span>
     <button class="btn-add-project" id="btnAddProject" title="Add project">+</button>
+    <div class="top-tabs">
+      <button class="top-tab active" data-view="projects">Projects</button>
+      <button class="top-tab" data-view="ai">AI Tools</button>
+    </div>
   </div>
   <div class="topbar-right" style="position:relative">
     <div id="userSection"></div>
@@ -426,6 +495,43 @@ body{
       </div>
       <div class="today-tasks" id="todayTasks"></div>
     </div>
+  </div>
+</div>
+
+<!-- AI TOOLS VIEW -->
+<div class="ai-view" id="aiView">
+  <div class="ai-view-inner">
+
+    <div class="ai-tool">
+      <h2>Nano Banana Pro &mdash; Image</h2>
+      <div class="ai-tool-sub">Generate images with Google Gemini 2.5 image model</div>
+      <div class="ai-key-row">
+        <span>Gemini API key:</span>
+        <input type="password" id="geminiKey" placeholder="paste your key">
+      </div>
+      <textarea class="ai-prompt" id="imagePrompt" placeholder="describe the image you want..."></textarea>
+      <div class="ai-controls">
+        <button class="ai-btn" id="btnGenImage">Generate</button>
+        <span class="ai-status" id="imageStatus"></span>
+      </div>
+      <div class="ai-result empty" id="imageResult">no image yet</div>
+    </div>
+
+    <div class="ai-tool">
+      <h2>Seedance 2.0 &mdash; Video</h2>
+      <div class="ai-tool-sub">Generate videos with ByteDance Seedance via fal.ai</div>
+      <div class="ai-key-row">
+        <span>fal.ai API key:</span>
+        <input type="password" id="falKey" placeholder="paste your key">
+      </div>
+      <textarea class="ai-prompt" id="videoPrompt" placeholder="describe the video you want..."></textarea>
+      <div class="ai-controls">
+        <button class="ai-btn" id="btnGenVideo">Generate</button>
+        <span class="ai-status" id="videoStatus"></span>
+      </div>
+      <div class="ai-result empty" id="videoResult">no video yet</div>
+    </div>
+
   </div>
 </div>
 
@@ -1018,6 +1124,126 @@ function createProject(){
   closeModal();
   renderProjects();
 }
+
+// ---- VIEW SWITCHING ----
+const aiView = document.getElementById('aiView');
+const canvasWrapEl = document.getElementById('canvasWrap');
+function switchView(view){
+  document.querySelectorAll('.top-tab').forEach(t=>{
+    t.classList.toggle('active', t.dataset.view===view);
+  });
+  if(view==='ai'){
+    canvasWrapEl.style.display='none';
+    aiView.classList.add('active');
+  } else {
+    canvasWrapEl.style.display='';
+    aiView.classList.remove('active');
+  }
+  localStorage.setItem('accion_view', view);
+}
+document.querySelectorAll('.top-tab').forEach(t=>{
+  t.addEventListener('click', ()=>switchView(t.dataset.view));
+});
+const savedView = localStorage.getItem('accion_view');
+if(savedView==='ai') switchView('ai');
+
+// ---- AI TOOLS ----
+const geminiKeyInput = document.getElementById('geminiKey');
+const falKeyInput = document.getElementById('falKey');
+geminiKeyInput.value = localStorage.getItem('accion_gemini_key') || '';
+falKeyInput.value = localStorage.getItem('accion_fal_key') || '';
+geminiKeyInput.addEventListener('change',()=>localStorage.setItem('accion_gemini_key',geminiKeyInput.value.trim()));
+falKeyInput.addEventListener('change',()=>localStorage.setItem('accion_fal_key',falKeyInput.value.trim()));
+
+// Image generation - Nano Banana Pro (Gemini 2.5 Flash Image)
+document.getElementById('btnGenImage').addEventListener('click', async ()=>{
+  const key = geminiKeyInput.value.trim();
+  const prompt = document.getElementById('imagePrompt').value.trim();
+  const status = document.getElementById('imageStatus');
+  const result = document.getElementById('imageResult');
+  const btn = document.getElementById('btnGenImage');
+  if(!key){ status.textContent='need a Gemini API key'; return; }
+  if(!prompt){ status.textContent='write a prompt'; return; }
+  btn.disabled=true; status.textContent='generating...'; result.classList.add('empty'); result.textContent='generating...';
+  try{
+    const resp = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-image-preview:generateContent?key=${encodeURIComponent(key)}`, {
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({
+        contents:[{parts:[{text:prompt}]}],
+        generationConfig:{responseModalities:['IMAGE','TEXT']}
+      })
+    });
+    if(!resp.ok){ throw new Error('HTTP '+resp.status+' '+(await resp.text()).slice(0,200)); }
+    const data = await resp.json();
+    const parts = data?.candidates?.[0]?.content?.parts || [];
+    const imgPart = parts.find(p=>p.inlineData?.data);
+    if(!imgPart){ throw new Error('no image in response'); }
+    const mime = imgPart.inlineData.mimeType || 'image/png';
+    const src = `data:${mime};base64,${imgPart.inlineData.data}`;
+    result.classList.remove('empty');
+    result.innerHTML = `<img src="${src}" alt="generated">`;
+    status.textContent='done';
+  } catch(err){
+    status.textContent='error: '+err.message;
+    result.classList.add('empty');
+    result.textContent='failed';
+  } finally {
+    btn.disabled=false;
+  }
+});
+
+// Video generation - Seedance 2.0 via fal.ai
+document.getElementById('btnGenVideo').addEventListener('click', async ()=>{
+  const key = falKeyInput.value.trim();
+  const prompt = document.getElementById('videoPrompt').value.trim();
+  const status = document.getElementById('videoStatus');
+  const result = document.getElementById('videoResult');
+  const btn = document.getElementById('btnGenVideo');
+  if(!key){ status.textContent='need a fal.ai API key'; return; }
+  if(!prompt){ status.textContent='write a prompt'; return; }
+  btn.disabled=true; status.textContent='submitting...'; result.classList.add('empty'); result.textContent='submitting...';
+  try{
+    // Submit to fal.ai queue
+    const submit = await fetch('https://queue.fal.run/fal-ai/bytedance/seedance/v1/pro/text-to-video', {
+      method:'POST',
+      headers:{'Content-Type':'application/json','Authorization':'Key '+key},
+      body: JSON.stringify({prompt, resolution:'1080p', duration:'5'})
+    });
+    if(!submit.ok){ throw new Error('HTTP '+submit.status+' '+(await submit.text()).slice(0,200)); }
+    const submitData = await submit.json();
+    const statusUrl = submitData.status_url;
+    const responseUrl = submitData.response_url;
+    if(!statusUrl || !responseUrl){ throw new Error('no queue urls'); }
+    // Poll for completion
+    let done = false;
+    let attempts = 0;
+    while(!done && attempts < 120){
+      await new Promise(r=>setTimeout(r,3000));
+      attempts++;
+      const st = await fetch(statusUrl, {headers:{'Authorization':'Key '+key}});
+      const stData = await st.json();
+      status.textContent = 'status: '+(stData.status||'?')+' ('+attempts+')';
+      result.textContent = 'generating... '+(attempts*3)+'s';
+      if(stData.status === 'COMPLETED'){ done = true; break; }
+      if(stData.status === 'FAILED'){ throw new Error('generation failed'); }
+    }
+    if(!done){ throw new Error('timed out'); }
+    const final = await fetch(responseUrl, {headers:{'Authorization':'Key '+key}});
+    const finalData = await final.json();
+    const videoUrl = finalData?.video?.url;
+    if(!videoUrl){ throw new Error('no video url in response'); }
+    result.classList.remove('empty');
+    result.innerHTML = `<video src="${videoUrl}" controls autoplay loop></video>`;
+    status.textContent='done';
+  } catch(err){
+    status.textContent='error: '+err.message;
+    result.classList.add('empty');
+    result.textContent='failed';
+  } finally {
+    btn.disabled=false;
+  }
+});
 
 // ---- SETTINGS ----
 const settingsDropdown = document.getElementById('settingsDropdown');
