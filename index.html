@@ -15,7 +15,9 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;500;600&display=swap" rel="stylesheet">
-<script src="https://accounts.google.com/gsi/client" async defer></script>
+<script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore-compat.js"></script>
 <style>
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
 :root{
@@ -735,6 +737,7 @@ function loadProjects(){
 }
 function saveProjects(){
   localStorage.setItem('accion_projects', JSON.stringify(projects));
+  if(typeof pushToCloud==='function') pushToCloud();
 }
 function loadUser(){
   const raw = localStorage.getItem('accion_user');
@@ -866,7 +869,10 @@ function dateKeyOffset(days){
   return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');
 }
 function todayKey(){ return dateKeyOffset(0); }
-function saveWorkouts(){ localStorage.setItem('accion_workouts', JSON.stringify(workouts)); }
+function saveWorkouts(){
+  localStorage.setItem('accion_workouts', JSON.stringify(workouts));
+  if(typeof pushToCloud==='function') pushToCloud();
+}
 function workoutStreak(){
   let streak = 0;
   let start = workouts[todayKey()]==='yes' ? 0 : 1;
@@ -1701,40 +1707,74 @@ document.getElementById('btnClearData').addEventListener('click',()=>{
   }
 });
 document.getElementById('btnSignOut').addEventListener('click',()=>{
+  fbAuth.signOut().catch(err=>console.error('sign-out',err));
   localStorage.removeItem('accion_user');
   user=null;
   render();
 });
 
-// ---- GOOGLE SIGN-IN ----
+// ---- FIREBASE ----
+const firebaseConfig = {
+  apiKey: "AIzaSyCM2ZKbjKxsMKj4-cmiw-pDGFBhtHvJa94",
+  authDomain: "accion-680d1.firebaseapp.com",
+  projectId: "accion-680d1",
+  storageBucket: "accion-680d1.firebasestorage.app",
+  messagingSenderId: "878250119202",
+  appId: "1:878250119202:web:9191a4a1feaf42acdcfa7b"
+};
+firebase.initializeApp(firebaseConfig);
+const fbAuth = firebase.auth();
+const fbDb = firebase.firestore();
+
+let cloudUnsub = null;
+let isApplyingRemote = false;
+let pushTimer = null;
+
+function pushToCloud(){
+  if(!fbAuth.currentUser || isApplyingRemote) return;
+  clearTimeout(pushTimer);
+  pushTimer = setTimeout(()=>{
+    fbDb.collection('users').doc(fbAuth.currentUser.uid).set({
+      projects, workouts,
+      updatedAt: Date.now()
+    }, { merge: true }).catch(err=>console.error('cloud push',err));
+  }, 400);
+}
+
 function googleSignIn(){
-  if(window.google && google.accounts){
-    google.accounts.id.initialize({
-      client_id:'414062244076-re2km0e60qf1k1g3rv9h6mbcd620if51.apps.googleusercontent.com',
-      callback: handleCredentialResponse,
-    });
-    google.accounts.id.prompt();
-  } else {
-    alert('Google Sign-In not loaded. Replace YOUR_GOOGLE_CLIENT_ID in the source and ensure the GSI script loads.');
-  }
+  const provider = new firebase.auth.GoogleAuthProvider();
+  fbAuth.signInWithPopup(provider).catch(err=>{
+    console.error('sign-in error',err);
+    alert('Sign-in failed: '+err.message);
+  });
 }
 
-function handleCredentialResponse(response){
-  try{
-    const payload = JSON.parse(atob(response.credential.split('.')[1]));
-    saveUser({name:payload.name,email:payload.email,picture:payload.picture});
+fbAuth.onAuthStateChanged(u=>{
+  if(u){
+    saveUser({name:u.displayName,email:u.email,picture:u.photoURL});
     render();
-  }catch(e){
-    console.error('Auth error',e);
-  }
-}
-
-window.addEventListener('load',()=>{
-  if(window.google && google.accounts){
-    google.accounts.id.initialize({
-      client_id:'414062244076-re2km0e60qf1k1g3rv9h6mbcd620if51.apps.googleusercontent.com',
-      callback: handleCredentialResponse,
-    });
+    if(cloudUnsub) cloudUnsub();
+    cloudUnsub = fbDb.collection('users').doc(u.uid).onSnapshot(snap=>{
+      if(!snap.exists){
+        pushToCloud();
+        return;
+      }
+      if(snap.metadata.hasPendingWrites) return;
+      const data = snap.data();
+      isApplyingRemote = true;
+      if(Array.isArray(data.projects)){
+        projects = data.projects;
+        localStorage.setItem('accion_projects', JSON.stringify(projects));
+      }
+      if(data.workouts && typeof data.workouts === 'object'){
+        workouts = data.workouts;
+        localStorage.setItem('accion_workouts', JSON.stringify(workouts));
+      }
+      isApplyingRemote = false;
+      render();
+    }, err=>console.error('cloud snapshot',err));
+  } else {
+    if(cloudUnsub){ cloudUnsub(); cloudUnsub=null; }
   }
 });
 
