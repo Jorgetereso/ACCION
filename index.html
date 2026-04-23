@@ -96,7 +96,10 @@ body{
   padding:10px 12px 8px;display:flex;align-items:center;justify-content:space-between;
   border-bottom:1px solid var(--border);flex-shrink:0;
   cursor:grab;position:relative;
+  user-select:none;-webkit-user-select:none;
 }
+.today-header,.workout-header{user-select:none;-webkit-user-select:none}
+body.card-drag-active,body.card-drag-active *{user-select:none !important;-webkit-user-select:none !important}
 .project-col.card-dragging .project-header{cursor:grabbing}
 .project-col>.project-color-bar{position:absolute;top:0;left:0;bottom:0;width:3px;z-index:1;border-radius:3px 0 0 3px}
 .project-name{font-size:13px;font-weight:500;display:flex;align-items:center;gap:8px}
@@ -824,6 +827,8 @@ function startCardDrag(el, pi, e){
   dragOffX = (e.clientX - rect.left) / zoom;
   dragOffY = (e.clientY - rect.top) / zoom;
   el.classList.add('card-dragging');
+  document.body.classList.add('card-drag-active');
+  if(window.getSelection) window.getSelection().removeAllRanges();
   document.addEventListener('pointermove', onCardDrag);
   document.addEventListener('pointerup', onCardDragEnd);
 }
@@ -858,6 +863,7 @@ function onCardDragEnd(){
   }
   dragCard = null;
   dragPi = -1;
+  document.body.classList.remove('card-drag-active');
   document.removeEventListener('pointermove', onCardDrag);
   document.removeEventListener('pointerup', onCardDragEnd);
 }
