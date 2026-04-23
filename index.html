@@ -175,6 +175,13 @@ body{
 }
 .project-col:hover .btn-minimize{opacity:1}
 .btn-minimize:hover{color:var(--text)}
+.btn-pin{
+  background:none;border:none;color:var(--dimmer);cursor:pointer;
+  font-size:11px;opacity:0;transition:all .15s;padding:2px;
+}
+.project-col:hover .btn-pin{opacity:1}
+.btn-pin:hover{color:var(--accent)}
+.btn-pin.pinned{opacity:1;color:var(--accent)}
 .project-col.collapsed .progress-bar,
 .project-col.collapsed .task-list,
 .project-col.collapsed .add-task-wrap{display:none}
@@ -436,6 +443,7 @@ body{
   .project-col.mobile-drag-below{border-bottom:2px solid var(--accent) !important}
   .btn-delete-project{opacity:1}
   .btn-minimize{opacity:1}
+  .btn-pin{display:none}
   .task-delete{opacity:.6}
   .priority-dots.no-priority{opacity:.8}
   .today-drag-handle{opacity:.6}
@@ -1056,6 +1064,7 @@ function renderProjects(){
           <span style="color:${proj.color}">${esc(proj.name)}</span>
         </div>
         <div class="project-actions">
+          <button class="btn-pin ${pipTarget===proj.id?'pinned':''}" data-pid="${proj.id}" title="Pin to always-on-top">&#128204;</button>
           <button class="btn-minimize" data-pi="${pi}" title="${proj.collapsed?'Expand':'Minimize'}">${proj.collapsed?'&#9654;':'&#9660;'}</button>
           <button class="btn-delete-project" data-pi="${pi}" title="Delete project">&times;</button>
         </div>
@@ -1104,12 +1113,12 @@ function attachEvents(){
       const pi = +hdr.dataset.drag;
       if(isNaN(pi)) return;
       hdr.addEventListener('pointerdown', e=>{
-        if(e.target.closest('.color-dot, .btn-delete-project, .btn-minimize, .color-popover, .color-swatch')) return;
+        if(e.target.closest('.color-dot, .btn-delete-project, .btn-minimize, .btn-pin, .color-popover, .color-swatch')) return;
         e.stopPropagation();
         startCardDrag(hdr.closest('.project-col'), pi, e);
       });
       hdr.addEventListener('dblclick', e=>{
-        if(e.target.closest('.color-dot, .btn-delete-project, .btn-minimize')) return;
+        if(e.target.closest('.color-dot, .btn-delete-project, .btn-minimize, .btn-pin')) return;
         projects[pi].collapsed = !projects[pi].collapsed;
         saveProjects();
         renderProjects();
@@ -1233,6 +1242,14 @@ function attachEvents(){
       saveProjects();
       renderProjects();
       renderToday();
+    });
+  });
+
+  // Pin button -> open project in PiP
+  document.querySelectorAll('.btn-pin').forEach(btn=>{
+    btn.addEventListener('click', e=>{
+      e.stopPropagation();
+      openPip(btn.dataset.pid);
     });
   });
 
@@ -1781,19 +1798,37 @@ fbAuth.onAuthStateChanged(u=>{
 // ---- PICTURE-IN-PICTURE (Always on top) ----
 let pipWindow = null;
 let pipInterval = null;
+let pipTarget = 'today'; // 'today' or project id
 
-document.getElementById('btnPip').addEventListener('click', async ()=>{
-  // Document PiP API (Chrome 116+)
+document.getElementById('btnPip').addEventListener('click', ()=>openPip('today'));
+
+async function openPip(target){
+  // Toggle off if clicking the same target that's currently pinned
+  if(pipWindow && !pipWindow.closed && pipTarget === target){
+    pipWindow.close();
+    pipWindow = null;
+    pipTarget = 'today';
+    renderProjects();
+    return;
+  }
+  pipTarget = target;
+  renderProjects(); // refresh pin button visuals
   if('documentPictureInPicture' in window){
     try {
-      pipWindow = await documentPictureInPicture.requestWindow({
-        width: 320,
-        height: 400,
-      });
+      if(pipWindow && !pipWindow.closed){
+        buildPipContent();
+        updatePipContent();
+        return;
+      }
+      pipWindow = await documentPictureInPicture.requestWindow({width:320,height:400});
       buildPipContent();
-      // Sync every 500ms
       pipInterval = setInterval(()=>{ if(pipWindow && !pipWindow.closed) updatePipContent(); else clearInterval(pipInterval); }, 500);
-      pipWindow.addEventListener('pagehide', ()=>{ clearInterval(pipInterval); pipWindow=null; });
+      pipWindow.addEventListener('pagehide', ()=>{
+        clearInterval(pipInterval);
+        pipWindow=null;
+        pipTarget='today';
+        renderProjects();
+      });
     } catch(err){
       console.error('PiP error:', err);
       fallbackPopup();
@@ -1801,7 +1836,7 @@ document.getElementById('btnPip').addEventListener('click', async ()=>{
   } else {
     fallbackPopup();
   }
-});
+}
 
 function buildPipContent(){
   if(!pipWindow) return;
@@ -1848,6 +1883,41 @@ function updatePipContent(){
   if(!pipWindow || pipWindow.closed) return;
   const root = pipWindow.document.getElementById('pip-root');
   if(!root) return;
+  if(pipTarget !== 'today'){
+    const proj = projects.find(p=>p.id===pipTarget);
+    if(!proj){ root.innerHTML = '<div class="pip-empty">project deleted</div>'; return; }
+    const pi = projects.indexOf(proj);
+    const doneCount = proj.tasks.filter(t=>t.done).length;
+    let html = `
+      <div class="pip-header">
+        <span class="pip-title" style="color:${proj.color}">${esc(proj.name)}</span>
+        <span class="pip-count">${doneCount}/${proj.tasks.length}</span>
+      </div>`;
+    if(!proj.tasks.length){
+      html += '<div class="pip-empty">no tasks</div>';
+    } else {
+      proj.tasks.forEach((t,ti)=>{
+        html += `<div class="pip-task ${t.done?'done':''}">
+          <input type="checkbox" class="pip-cb" data-pi="${pi}" data-ti="${ti}" ${t.done?'checked':''}>
+          <span>${esc(t.text)}</span>
+        </div>`;
+      });
+    }
+    root.innerHTML = html;
+    root.querySelectorAll('.pip-cb').forEach(cb=>{
+      cb.addEventListener('change', e=>{
+        const ppi=+cb.dataset.pi, tti=+cb.dataset.ti;
+        if(projects[ppi] && projects[ppi].tasks[tti]){
+          projects[ppi].tasks[tti].done = cb.checked;
+          saveProjects();
+          renderProjects();
+          renderToday();
+          updatePipContent();
+        }
+      });
+    });
+    return;
+  }
 
   // Collect today items, use todayOrder for sorting
   const rawItems = [];
