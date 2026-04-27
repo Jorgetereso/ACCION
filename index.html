@@ -644,10 +644,6 @@ body.signed-out .btn-add-project{display:none}
   <div class="topbar-left">
     <span class="app-name">ACCION</span>
     <button class="btn-add-project" id="btnAddProject" title="Add project">+</button>
-    <div class="top-tabs">
-      <button class="top-tab active" data-view="projects">Tasks</button>
-      <button class="top-tab" data-view="ai">AI Tools</button>
-    </div>
   </div>
   <div class="topbar-right" style="position:relative">
     <div id="userSection"></div>
@@ -1406,8 +1402,7 @@ function switchView(view){
 document.querySelectorAll('.top-tab').forEach(t=>{
   t.addEventListener('click', ()=>switchView(t.dataset.view));
 });
-const savedView = localStorage.getItem('accion_view');
-if(savedView==='ai') switchView('ai');
+localStorage.setItem('accion_view','projects');
 
 // ---- AI NODE EDITOR ----
 const aiCanvasWrap = document.getElementById('aiCanvasWrap');
