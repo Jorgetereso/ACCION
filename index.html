@@ -405,6 +405,21 @@ body.card-drag-active,body.card-drag-active *{user-select:none !important;-webki
   background-size:30px 30px;
 }
 
+/* SIGN-IN EMPTY STATE */
+.empty-canvas-hint{
+  position:absolute;top:50%;left:50%;
+  transform:translate(-50%,-50%);
+  color:var(--dim);font-size:13px;letter-spacing:3px;
+  text-align:center;pointer-events:none;display:none;
+  text-transform:uppercase;
+}
+.empty-canvas-hint .sub{
+  display:block;font-size:10px;color:var(--dimmer);
+  margin-top:8px;letter-spacing:2px;text-transform:none;
+}
+body.signed-out .empty-canvas-hint{display:block}
+body.signed-out .btn-add-project{display:none}
+
 /* ---- MOBILE ---- */
 @media(max-width:600px){
   .canvas-wrap{
@@ -646,6 +661,10 @@ body.card-drag-active,body.card-drag-active *{user-select:none !important;-webki
 </div>
 
 <div class="canvas-wrap" id="canvasWrap">
+  <div class="empty-canvas-hint" id="emptyCanvasHint">
+    sign in to start
+    <span class="sub">your projects sync across devices</span>
+  </div>
   <div class="canvas" id="canvas">
     <div class="today-card empty" id="todayCard">
       <div class="today-header" data-drag="today">
@@ -869,8 +888,17 @@ function onCardDragEnd(){
 }
 
 // ---- RENDER ----
+let signedIn = false;
 function render(){
   renderUser();
+  document.body.classList.toggle('signed-out', !signedIn);
+  if(!signedIn){
+    canvas.querySelectorAll('.project-col').forEach(el=>el.remove());
+    document.getElementById('todayCard').classList.add('empty');
+    document.getElementById('workoutCard').style.display = 'none';
+    return;
+  }
+  document.getElementById('workoutCard').style.display = '';
   renderProjects();
   renderToday();
   renderWorkouts();
@@ -1773,6 +1801,7 @@ function googleSignIn(){
 }
 
 fbAuth.onAuthStateChanged(u=>{
+  signedIn = !!u;
   if(u){
     saveUser({name:u.displayName,email:u.email,picture:u.photoURL});
     render();
@@ -1798,6 +1827,9 @@ fbAuth.onAuthStateChanged(u=>{
     }, err=>console.error('cloud snapshot',err));
   } else {
     if(cloudUnsub){ cloudUnsub(); cloudUnsub=null; }
+    user = null;
+    localStorage.removeItem('accion_user');
+    render();
   }
 });
 
