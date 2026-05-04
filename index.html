@@ -1789,6 +1789,7 @@ function pushToCloud(){
 
 function googleSignIn(){
   const provider = new firebase.auth.GoogleAuthProvider();
+  provider.setCustomParameters({ prompt: 'select_account' });
   fbAuth.signInWithPopup(provider).catch(err=>{
     console.error('sign-in error',err);
     alert('Sign-in failed: '+err.message);
