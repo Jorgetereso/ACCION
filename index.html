@@ -98,7 +98,7 @@ body{
   cursor:grab;position:relative;
   user-select:none;-webkit-user-select:none;
 }
-.today-header,.workout-header{user-select:none;-webkit-user-select:none}
+.today-header{user-select:none;-webkit-user-select:none}
 body.card-drag-active,body.card-drag-active *{user-select:none !important;-webkit-user-select:none !important}
 .project-col.card-dragging .project-header{cursor:grabbing}
 .project-col>.project-color-bar{position:absolute;top:0;left:0;bottom:0;width:3px;z-index:1;border-radius:3px 0 0 3px}
@@ -198,6 +198,9 @@ body.card-drag-active,body.card-drag-active *{user-select:none !important;-webki
   transition:background .1s;position:relative;
 }
 .task-item:hover{background:rgba(255,255,255,.02)}
+.task-item.dragging-task{opacity:.4}
+.task-item.drag-above{box-shadow:0 -1px 0 0 #f59e0b}
+.task-item.drag-below{box-shadow:0 1px 0 0 #f59e0b}
 .task-checkbox{
   appearance:none;-webkit-appearance:none;width:14px;height:14px;min-width:14px;
   border:1px solid #444;border-radius:3px;cursor:pointer;
@@ -304,53 +307,6 @@ body.card-drag-active,body.card-drag-active *{user-select:none !important;-webki
   background:rgba(255,255,255,.06);margin-left:auto;flex-shrink:0;
 }
 
-/* WORKOUT CARD */
-.workout-card{
-  position:absolute;z-index:2;
-  background:#0d1712;border:1px solid #1e3a2a;border-radius:6px;
-  width:210px;
-  display:flex;flex-direction:column;
-  border-left:3px solid #22c55e;
-  box-shadow:0 0 24px rgba(34,197,94,.08);
-}
-.workout-header{
-  padding:8px 12px 6px;display:flex;align-items:center;justify-content:space-between;
-  border-bottom:1px solid rgba(34,197,94,.12);cursor:grab;
-  background:rgba(34,197,94,.05);gap:8px;
-}
-.workout-label{font-size:11px;font-weight:600;letter-spacing:2.5px;color:#22c55e}
-.workout-streak{font-size:10px;color:var(--dim)}
-.workout-body{padding:8px 12px 10px;cursor:pointer;transition:background .12s}
-.workout-body:hover{background:rgba(255,255,255,.02)}
-.workout-dots{display:flex;gap:4px}
-.workout-dot{
-  flex:1;height:20px;border-radius:3px;
-  background:#1a1a1a;border:1px solid #222;
-  transition:all .15s;
-}
-.workout-dot.yes{background:#22c55e;border-color:#22c55e}
-.workout-dot.no{background:#3b1515;border-color:#4a1a1a}
-.workout-dot.today{outline:1px solid #22c55e66;outline-offset:1px}
-.workout-caption{
-  font-size:9px;color:var(--dimmer);margin-top:6px;text-align:center;letter-spacing:1px;
-}
-.workout-prompt{
-  display:flex;align-items:center;gap:6px;
-  padding:8px 12px;border-bottom:1px solid rgba(34,197,94,.12);
-  background:rgba(34,197,94,.04);
-}
-.workout-prompt-q{flex:1;font-size:11px;color:var(--text)}
-.workout-btn{
-  background:var(--bg2);border:1px solid var(--border);color:var(--dim);
-  font-family:inherit;font-size:10px;padding:3px 10px;border-radius:3px;
-  cursor:pointer;transition:all .12s;
-}
-.workout-btn:hover{border-color:#444;color:var(--text)}
-.workout-btn.yes{background:#22c55e;border-color:#22c55e;color:#fff}
-.workout-btn.yes:hover{background:#16a34a;border-color:#16a34a}
-.workout-btn.no{background:#3b1515;border-color:#4a1a1a;color:#f87171}
-.workout-btn.no:hover{background:#4a1a1a;border-color:#5a2020}
-
 /* ADD PROJECT MODAL */
 .modal-overlay{
   position:fixed;inset:0;background:rgba(0,0,0,.6);backdrop-filter:blur(2px);
@@ -448,11 +404,6 @@ body.signed-out .btn-add-project{display:none}
     resize:none !important;order:-1;
   }
   .today-card.empty{display:none}
-  .workout-card{
-    position:relative !important;
-    left:auto !important;top:auto !important;
-    width:100% !important;order:-1;
-  }
   .topbar{height:40px;padding:0 10px}
   .app-name{font-size:12px;letter-spacing:2px}
   .project-header{cursor:grab}
@@ -669,21 +620,6 @@ body.signed-out .btn-add-project{display:none}
       </div>
       <div class="today-tasks" id="todayTasks"></div>
     </div>
-    <div class="workout-card" id="workoutCard">
-      <div class="workout-header" data-drag="workout">
-        <span class="workout-label">WORKOUTS</span>
-        <span class="workout-streak" id="workoutStreak"></span>
-      </div>
-      <div class="workout-prompt" id="workoutPrompt" style="display:none">
-        <span class="workout-prompt-q">trained today?</span>
-        <button class="workout-btn no" id="workoutNo">no</button>
-        <button class="workout-btn yes" id="workoutYes">yes</button>
-      </div>
-      <div class="workout-body" id="workoutBody">
-        <div class="workout-dots" id="workoutDots"></div>
-        <div class="workout-caption" id="workoutCaption">last 7 days</div>
-      </div>
-    </div>
   </div>
 </div>
 
@@ -752,8 +688,6 @@ let projects = loadProjects();
 let user = loadUser();
 let todayPos = JSON.parse(localStorage.getItem('accion_today_pos'))||{x:20,y:20};
 let todayOrder = JSON.parse(localStorage.getItem('accion_today_order'))||[];
-let workouts = JSON.parse(localStorage.getItem('accion_workouts'))||{};
-let workoutPos = JSON.parse(localStorage.getItem('accion_workout_pos'))||{x:20,y:260};
 function saveTodayOrder(){ localStorage.setItem('accion_today_order',JSON.stringify(todayOrder)); }
 
 function loadProjects(){
@@ -868,9 +802,6 @@ function onCardDragEnd(){
   if(dragPi === -1){
     todayPos = {x,y};
     localStorage.setItem('accion_today_pos',JSON.stringify(todayPos));
-  } else if(dragPi === -2){
-    workoutPos = {x,y};
-    localStorage.setItem('accion_workout_pos',JSON.stringify(workoutPos));
   } else {
     projects[dragPi].x = x;
     projects[dragPi].y = y;
@@ -891,75 +822,12 @@ function render(){
   if(!signedIn){
     canvas.querySelectorAll('.project-col').forEach(el=>el.remove());
     document.getElementById('todayCard').classList.add('empty');
-    document.getElementById('workoutCard').style.display = 'none';
     return;
   }
-  document.getElementById('workoutCard').style.display = '';
   renderProjects();
   renderToday();
-  renderWorkouts();
 }
 
-// ---- WORKOUTS ----
-function dateKeyOffset(days){
-  const d = new Date();
-  d.setDate(d.getDate() - days);
-  return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');
-}
-function todayKey(){ return dateKeyOffset(0); }
-function saveWorkouts(){
-  localStorage.setItem('accion_workouts', JSON.stringify(workouts));
-  if(typeof pushToCloud==='function') pushToCloud();
-}
-function workoutStreak(){
-  let streak = 0;
-  let start = workouts[todayKey()]==='yes' ? 0 : 1;
-  for(let i=start;i<365;i++){
-    if(workouts[dateKeyOffset(i)]==='yes') streak++;
-    else break;
-  }
-  return streak;
-}
-function renderWorkouts(){
-  const card = document.getElementById('workoutCard');
-  const dots = document.getElementById('workoutDots');
-  const streakEl = document.getElementById('workoutStreak');
-  const prompt = document.getElementById('workoutPrompt');
-  const caption = document.getElementById('workoutCaption');
-  card.style.left = workoutPos.x + 'px';
-  card.style.top = workoutPos.y + 'px';
-  const s = workoutStreak();
-  streakEl.textContent = s ? s + 'd streak' : '';
-  const todayLogged = todayKey() in workouts;
-  prompt.style.display = todayLogged ? 'none' : 'flex';
-  caption.textContent = todayLogged ? 'last 7 days · tap to change' : 'last 7 days';
-  let html = '';
-  for(let i=6;i>=0;i--){
-    const key = dateKeyOffset(i);
-    const v = workouts[key];
-    const cls = (v==='yes'?'yes':v==='no'?'no':'') + (i===0?' today':'');
-    html += `<div class="workout-dot ${cls}" title="${key}${v?' · '+v:''}"></div>`;
-  }
-  dots.innerHTML = html;
-  if(!isMobile){
-    const hdr = card.querySelector('[data-drag="workout"]');
-    hdr.onpointerdown = e => { e.stopPropagation(); startCardDrag(card, -2, e); };
-  }
-}
-function logWorkout(v){
-  workouts[todayKey()] = v;
-  saveWorkouts();
-  renderWorkouts();
-}
-document.getElementById('workoutYes').addEventListener('click', e=>{ e.stopPropagation(); logWorkout('yes'); });
-document.getElementById('workoutNo').addEventListener('click', e=>{ e.stopPropagation(); logWorkout('no'); });
-document.getElementById('workoutBody').addEventListener('click', ()=>{
-  if(todayKey() in workouts){
-    delete workouts[todayKey()];
-    saveWorkouts();
-    renderWorkouts();
-  }
-});
 
 function renderToday(){
   const card = document.getElementById('todayCard');
@@ -1105,7 +973,7 @@ function renderProjects(){
           const p = t.priority||'';
           const pColor = p==='today'?'#ef4444':p==='normal'?'#f97316':p==='low'?'#eab308':'';
           return `
-          <div class="task-item ${t.done?'done':''}" data-pi="${pi}" data-ti="${ti}">
+          <div class="task-item ${t.done?'done':''}" data-pi="${pi}" data-ti="${ti}" draggable="true">
             <input type="checkbox" class="task-checkbox" ${t.done?'checked':''} data-pi="${pi}" data-ti="${ti}">
             ${p?`<div class="task-priority-indicator" style="background:${pColor}"></div>`:''}
             <span class="task-text">${esc(t.text)}</span>
@@ -1196,6 +1064,52 @@ function attachEvents(){
       });
     });
   }
+
+  // Drag-to-reorder tasks within a project
+  let taskDragFromPi = null, taskDragFromTi = null;
+  document.querySelectorAll('.task-item').forEach(item=>{
+    item.addEventListener('dragstart', e=>{
+      taskDragFromPi = +item.dataset.pi;
+      taskDragFromTi = +item.dataset.ti;
+      item.classList.add('dragging-task');
+      e.dataTransfer.effectAllowed='move';
+      e.stopPropagation();
+    });
+    item.addEventListener('dragend', ()=>{
+      item.classList.remove('dragging-task');
+      document.querySelectorAll('.task-item').forEach(r=>{r.classList.remove('drag-above');r.classList.remove('drag-below')});
+      taskDragFromPi=null; taskDragFromTi=null;
+    });
+    item.addEventListener('dragover', e=>{
+      if(taskDragFromPi===null) return;
+      const pi=+item.dataset.pi;
+      if(pi!==taskDragFromPi) return;
+      e.preventDefault();
+      e.stopPropagation();
+      const ti=+item.dataset.ti;
+      document.querySelectorAll(`.task-list[data-pi="${pi}"] .task-item`).forEach(r=>{r.classList.remove('drag-above');r.classList.remove('drag-below')});
+      if(ti<taskDragFromTi) item.classList.add('drag-above');
+      else if(ti>taskDragFromTi) item.classList.add('drag-below');
+    });
+    item.addEventListener('dragleave', ()=>{
+      item.classList.remove('drag-above'); item.classList.remove('drag-below');
+    });
+    item.addEventListener('drop', e=>{
+      if(taskDragFromPi===null) return;
+      const pi=+item.dataset.pi;
+      if(pi!==taskDragFromPi) return;
+      e.preventDefault();
+      e.stopPropagation();
+      const ti=+item.dataset.ti;
+      if(ti===taskDragFromTi) return;
+      const moved = projects[pi].tasks.splice(taskDragFromTi,1)[0];
+      projects[pi].tasks.splice(ti,0,moved);
+      saveProjects();
+      renderProjects();
+      renderToday();
+      updatePipContent();
+    });
+  });
 
   // Checkboxes
   document.querySelectorAll('.task-checkbox').forEach(cb=>{
@@ -1781,7 +1695,7 @@ function pushToCloud(){
   clearTimeout(pushTimer);
   pushTimer = setTimeout(()=>{
     fbDb.collection('users').doc(fbAuth.currentUser.uid).set({
-      projects, workouts,
+      projects,
       updatedAt: Date.now()
     }, { merge: true }).catch(err=>console.error('cloud push',err));
   }, 400);
@@ -1813,10 +1727,6 @@ fbAuth.onAuthStateChanged(u=>{
       if(Array.isArray(data.projects)){
         projects = data.projects;
         localStorage.setItem('accion_projects', JSON.stringify(projects));
-      }
-      if(data.workouts && typeof data.workouts === 'object'){
-        workouts = data.workouts;
-        localStorage.setItem('accion_workouts', JSON.stringify(workouts));
       }
       isApplyingRemote = false;
       render();
@@ -1931,7 +1841,8 @@ function updatePipContent(){
       html += '<div class="pip-empty">no tasks</div>';
     } else {
       proj.tasks.forEach((t,ti)=>{
-        html += `<div class="pip-task ${t.done?'done':''}">
+        html += `<div class="pip-task ${t.done?'done':''}" data-ti="${ti}" draggable="true">
+          <span class="pip-drag">&#8942;</span>
           <input type="checkbox" class="pip-cb" data-pi="${pi}" data-ti="${ti}" ${t.done?'checked':''}>
           <span>${esc(t.text)}</span>
         </div>`;
@@ -1948,6 +1859,43 @@ function updatePipContent(){
           renderToday();
           updatePipContent();
         }
+      });
+    });
+    // Drag-to-reorder project tasks in PiP
+    let pipProjDragFrom = null;
+    const pipProjRows = root.querySelectorAll('.pip-task');
+    pipProjRows.forEach(row=>{
+      row.addEventListener('dragstart', e=>{
+        pipProjDragFrom = +row.dataset.ti;
+        row.classList.add('pip-dragging');
+        e.dataTransfer.effectAllowed='move';
+      });
+      row.addEventListener('dragend', ()=>{
+        row.classList.remove('pip-dragging');
+        pipProjRows.forEach(r=>{r.classList.remove('pip-above');r.classList.remove('pip-below')});
+        pipProjDragFrom = null;
+      });
+      row.addEventListener('dragover', e=>{
+        e.preventDefault();
+        if(pipProjDragFrom===null) return;
+        const ti = +row.dataset.ti;
+        pipProjRows.forEach(r=>{r.classList.remove('pip-above');r.classList.remove('pip-below')});
+        if(ti<pipProjDragFrom) row.classList.add('pip-above');
+        else if(ti>pipProjDragFrom) row.classList.add('pip-below');
+      });
+      row.addEventListener('dragleave', ()=>{
+        row.classList.remove('pip-above'); row.classList.remove('pip-below');
+      });
+      row.addEventListener('drop', e=>{
+        e.preventDefault();
+        const toTi = +row.dataset.ti;
+        if(pipProjDragFrom===null||pipProjDragFrom===toTi) return;
+        const moved = proj.tasks.splice(pipProjDragFrom,1)[0];
+        proj.tasks.splice(toTi,0,moved);
+        saveProjects();
+        renderProjects();
+        renderToday();
+        updatePipContent();
       });
     });
     return;
