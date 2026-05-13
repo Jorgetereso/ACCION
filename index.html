@@ -58,6 +58,8 @@ body{
   font-size:14px;padding:4px;transition:color .15s;display:flex;align-items:center;
 }
 .btn-icon:hover{color:var(--text)}
+.btn-icon.spinning{animation:spin .6s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
 #google-signin-btn{cursor:pointer}
 #google-signin-btn .g-btn{
   background:var(--bg2);border:1px solid var(--border);color:var(--dim);
@@ -598,6 +600,7 @@ body.signed-out .btn-add-project{display:none}
   </div>
   <div class="topbar-right" style="position:relative">
     <div id="userSection"></div>
+    <button class="btn-icon" id="btnRefresh" title="Refresh site (load latest version)">&#x21bb;</button>
     <button class="btn-icon" id="btnPip" title="Always on top">&#128204;</button>
     <button class="btn-icon" id="btnSettings" title="Settings">&#9881;</button>
     <div class="settings-dropdown" id="settingsDropdown">
@@ -1743,6 +1746,14 @@ fbAuth.onAuthStateChanged(u=>{
 let pipWindow = null;
 let pipInterval = null;
 let pipTarget = 'today'; // 'today' or project id
+
+document.getElementById('btnRefresh').addEventListener('click', ()=>{
+  const btn = document.getElementById('btnRefresh');
+  btn.classList.add('spinning');
+  // Cache-bust query string so GitHub Pages serves the latest HTML
+  const base = location.pathname.replace(/\?.*$/,'');
+  location.replace(base + '?v=' + Date.now());
+});
 
 document.getElementById('btnPip').addEventListener('click', ()=>openPip('today'));
 
