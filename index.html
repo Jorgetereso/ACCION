@@ -1917,25 +1917,34 @@ let cloudUnsub = null;
 let isApplyingRemote = false;
 let pushTimer = null;
 
-// Known project site links, discovered from Jorge's GitHub + 3d.ar.
-// Seeded once into existing projects (matched by name), newest first.
+// Known project site links, discovered from Jorge's site hub (jorgetereso.github.io)
+// + 3d.ar + GitHub. Seeded once into existing projects (matched by name), newest first.
 const KNOWN_LINKS = {
+  'GLOOMY LBE':[
+    {url:'https://3d.ar/gloomyeyes/', label:'Gloomy Eyes LBE'},
+    {url:'https://3d.ar/gloomyeyes-ownership/', label:'Ownership'},
+    {url:'https://3d.ar/gloomyeyes-timing/', label:'Timing'}
+  ],
   'EGGSCAPE':[
     {url:'https://3d.ar/eggscape/', label:'Eggscape Intel'}
   ],
-  'NATURIS':[
-    {url:'https://3d.ar/naturis/', label:'Naturis site'},
-    {url:'https://jorgetereso.github.io/brotaciones/projects/naturis/', label:'Brotaciones'}
+  '3DAR EXEC':[
+    {url:'https://3d.ar/time-allocation/', label:'Time Allocation'},
+    {url:'https://3d.ar/finance-tracker/', label:'Portfolio Management'}
   ],
   'PROTAGONIST':[
     {url:'https://jorgetereso.github.io/brotaciones/projects/protagonist/', label:'Brotaciones'}
   ],
   'HIRAKU':[
-    {url:'https://jorgetereso.github.io/HIRAKU/', label:'Hiraku site'}
+    {url:'https://3d.ar/HIRAKU/', label:'Hiraku'}
+  ],
+  'NATURIS':[
+    {url:'https://3d.ar/naturis/', label:'Naturis'},
+    {url:'https://jorgetereso.github.io/brotaciones/projects/naturis/', label:'Brotaciones'}
   ]
 };
 function maybeSeedLinks(){
-  if(localStorage.getItem('accion_links_seeded_v1')) return;
+  if(localStorage.getItem('accion_links_seeded_v2')) return;
   const now = Date.now();
   let changed = false;
   projects.forEach(p=>{
@@ -1949,7 +1958,7 @@ function maybeSeedLinks(){
       }
     });
   });
-  localStorage.setItem('accion_links_seeded_v1','1');
+  localStorage.setItem('accion_links_seeded_v2','1');
   if(changed) saveProjects();
 }
 
