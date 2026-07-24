@@ -589,6 +589,103 @@ body.signed-out .btn-add-project{display:none}
   0%{transform:translateX(-60px) rotate(0deg)}
   100%{transform:translateX(calc(100vw + 60px)) rotate(360deg)}
 }
+
+/* ---- WAR ROOM ---- */
+body.signed-out .top-tabs{display:none}
+.warroom-view{
+  position:absolute;top:44px;left:0;right:0;bottom:0;
+  display:none;background:var(--bg);overflow-y:auto;
+  background-image:radial-gradient(circle,#141414 1px,transparent 1px);
+  background-size:30px 30px;
+}
+.warroom-view.active{display:block}
+.warroom-inner{max-width:1120px;margin:0 auto;padding:26px 20px 90px}
+.warroom-head{display:flex;align-items:baseline;gap:12px;margin-bottom:22px;flex-wrap:wrap}
+.warroom-title{font-size:16px;font-weight:600;letter-spacing:5px;color:var(--accent)}
+.warroom-sub{font-size:11px;color:var(--dim);letter-spacing:1px}
+.warroom-grid{
+  display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:14px;
+}
+.wr-card{
+  background:var(--bg1);border:1px solid var(--border);border-radius:8px;
+  overflow:hidden;border-left:3px solid var(--wr-c,#3b82f6);
+  transition:border-color .15s,box-shadow .15s;align-self:start;
+}
+.wr-card:hover{border-color:#333;box-shadow:0 4px 18px rgba(0,0,0,.35)}
+.wr-card-head{
+  padding:12px 14px;display:flex;align-items:center;gap:9px;
+}
+.wr-dot-static{width:10px;height:10px;min-width:10px;border-radius:50%}
+.wr-name{font-size:13px;font-weight:500;flex:1;word-break:break-word}
+.wr-badge{
+  font-size:9px;color:var(--dim);background:rgba(255,255,255,.05);
+  padding:2px 7px;border-radius:10px;letter-spacing:.5px;white-space:nowrap;
+}
+.wr-add-toggle{
+  background:none;border:1px solid var(--border);color:var(--dimmer);
+  width:20px;height:20px;border-radius:4px;cursor:pointer;font-size:13px;
+  display:flex;align-items:center;justify-content:center;line-height:1;
+  opacity:0;transition:all .15s;flex-shrink:0;
+}
+.wr-card:hover .wr-add-toggle{opacity:1}
+.wr-add-toggle:hover{border-color:var(--accent);color:var(--accent)}
+.wr-card.adding .wr-add-toggle{opacity:1;border-color:var(--accent);color:var(--accent)}
+.wr-latest-tag{
+  font-size:8px;font-weight:600;letter-spacing:1px;color:#10b981;
+  border:1px solid rgba(16,185,129,.4);border-radius:3px;padding:1px 4px;flex-shrink:0;
+}
+.wr-latest-tag.sm{font-size:8px}
+
+/* Links body — always visible */
+.wr-body{padding:0 14px 12px}
+.wr-links{
+  display:flex;flex-direction:column;gap:2px;
+  border-top:1px solid var(--border);padding-top:8px;margin-top:2px;
+}
+.wr-link-row{display:flex;align-items:center;gap:8px;padding:4px 2px;border-radius:4px}
+.wr-link-row:hover{background:rgba(255,255,255,.02)}
+.wr-dot{width:5px;height:5px;min-width:5px;border-radius:50%;background:var(--dimmer);margin:0 1px}
+.wr-link{
+  flex:1;font-size:11px;color:var(--text);text-decoration:none;
+  overflow:hidden;text-overflow:ellipsis;white-space:nowrap;transition:color .12s;
+}
+.wr-link:hover{color:var(--accent);text-decoration:underline}
+.wr-link-del{
+  background:none;border:none;color:var(--dimmer);cursor:pointer;font-size:13px;
+  padding:0 4px;opacity:0;transition:all .12s;flex-shrink:0;
+}
+.wr-link-row:hover .wr-link-del{opacity:1}
+.wr-link-del:hover{color:#ef4444}
+.wr-empty{
+  font-size:10px;color:var(--dimmer);padding:10px 2px;letter-spacing:.5px;
+  border-top:1px solid var(--border);margin-top:2px;
+}
+.wr-add{display:none;gap:6px;margin-top:10px;flex-wrap:wrap}
+.wr-card.adding .wr-add{display:flex}
+.wr-add-url,.wr-add-label{
+  background:var(--bg);border:1px solid var(--border);color:var(--text);
+  font-family:inherit;font-size:11px;padding:6px 9px;border-radius:4px;
+  outline:none;transition:border-color .15s;
+}
+.wr-add-url{flex:1;min-width:120px}
+.wr-add-label{width:96px;flex-shrink:0}
+.wr-add-url:focus,.wr-add-label:focus{border-color:var(--accent)}
+.wr-add-btn{
+  background:var(--bg2);border:1px solid var(--border);color:var(--dim);
+  font-family:inherit;font-size:10px;letter-spacing:1px;text-transform:uppercase;
+  padding:6px 12px;border-radius:4px;cursor:pointer;transition:all .15s;flex-shrink:0;
+}
+.wr-add-btn:hover{border-color:var(--accent);color:var(--accent)}
+.warroom-empty{
+  color:var(--dimmer);font-size:12px;letter-spacing:2px;text-align:center;
+  padding:60px 0;text-transform:uppercase;
+}
+@media(max-width:600px){
+  .warroom-view{top:40px}
+  .warroom-inner{padding:16px 12px 90px}
+  .warroom-grid{grid-template-columns:1fr}
+  .wr-add-label{width:100%}
+}
 </style>
 </head>
 <body>
@@ -597,6 +694,10 @@ body.signed-out .btn-add-project{display:none}
   <div class="topbar-left">
     <span class="app-name">ACCION</span>
     <button class="btn-add-project" id="btnAddProject" title="Add project">+</button>
+    <div class="top-tabs">
+      <button class="top-tab active" data-view="projects">Board</button>
+      <button class="top-tab" data-view="warroom">War Room</button>
+    </div>
   </div>
   <div class="topbar-right" style="position:relative">
     <div id="userSection"></div>
@@ -640,6 +741,17 @@ body.signed-out .btn-add-project{display:none}
       <button class="ai-tool-btn" data-type="image_output"><span class="dot"></span>Image Out</button>
       <button class="ai-tool-btn" data-type="video_output"><span class="dot"></span>Video Out</button>
     </div>
+  </div>
+</div>
+
+<!-- WAR ROOM VIEW -->
+<div class="warroom-view" id="warRoomView">
+  <div class="warroom-inner">
+    <div class="warroom-head">
+      <span class="warroom-title">WAR ROOM</span>
+      <span class="warroom-sub" id="warRoomSub"></span>
+    </div>
+    <div class="warroom-grid" id="warRoomGrid"></div>
   </div>
 </div>
 
@@ -825,10 +937,16 @@ function render(){
   if(!signedIn){
     canvas.querySelectorAll('.project-col').forEach(el=>el.remove());
     document.getElementById('todayCard').classList.add('empty');
+    // Reset to board view when signed out (tabs are hidden)
+    canvasWrap.style.display='';
+    document.getElementById('aiView').classList.remove('active');
+    document.getElementById('warRoomView').classList.remove('active');
+    document.querySelectorAll('.top-tab').forEach(t=>t.classList.toggle('active', t.dataset.view==='projects'));
     return;
   }
   renderProjects();
   renderToday();
+  if(document.getElementById('warRoomView').classList.contains('active')) renderWarRoom();
 }
 
 
@@ -1302,24 +1420,130 @@ function createProject(){
 
 // ---- VIEW SWITCHING ----
 const aiView = document.getElementById('aiView');
+const warRoomView = document.getElementById('warRoomView');
 const canvasWrapEl = document.getElementById('canvasWrap');
 function switchView(view){
   document.querySelectorAll('.top-tab').forEach(t=>{
     t.classList.toggle('active', t.dataset.view===view);
   });
-  if(view==='ai'){
-    canvasWrapEl.style.display='none';
-    aiView.classList.add('active');
-  } else {
-    canvasWrapEl.style.display='';
-    aiView.classList.remove('active');
-  }
+  canvasWrapEl.style.display = view==='projects' ? '' : 'none';
+  aiView.classList.toggle('active', view==='ai');
+  warRoomView.classList.toggle('active', view==='warroom');
+  if(view==='warroom') renderWarRoom();
   localStorage.setItem('accion_view', view);
 }
 document.querySelectorAll('.top-tab').forEach(t=>{
   t.addEventListener('click', ()=>switchView(t.dataset.view));
 });
 localStorage.setItem('accion_view','projects');
+
+// ---- WAR ROOM ----
+let wrAddOpen = new Set();
+
+function normalizeUrl(u){
+  u = (u||'').trim();
+  if(!u) return '';
+  if(!/^https?:\/\//i.test(u)) u = 'https://' + u;
+  return u;
+}
+function prettyUrl(u){
+  try{
+    const x = new URL(u);
+    const path = x.pathname && x.pathname !== '/' ? x.pathname : '';
+    return x.hostname.replace(/^www\./,'') + path;
+  }catch(e){ return u; }
+}
+function linkLabel(l){ return l.label ? l.label : prettyUrl(l.url); }
+
+function renderWarRoom(){
+  const grid = document.getElementById('warRoomGrid');
+  const sub = document.getElementById('warRoomSub');
+  if(!grid) return;
+  if(!signedIn){ grid.innerHTML=''; sub.textContent=''; return; }
+  if(!projects.length){
+    sub.textContent = '';
+    grid.innerHTML = '<div class="warroom-empty">no projects yet</div>';
+    return;
+  }
+  sub.textContent = projects.length + ' project' + (projects.length!==1?'s':'') + ' active';
+  grid.innerHTML = projects.map(proj=>{
+    const links = (proj.links||[]).slice().sort((a,b)=>(b.ts||0)-(a.ts||0));
+    const done = proj.tasks.filter(t=>t.done).length;
+    const total = proj.tasks.length;
+    const adding = wrAddOpen.has(proj.id);
+    return `
+    <div class="wr-card ${adding?'adding':''}" style="--wr-c:${proj.color}">
+      <div class="wr-card-head">
+        <span class="wr-dot-static" style="background:${proj.color}"></span>
+        <span class="wr-name" style="color:${proj.color}">${esc(proj.name)}</span>
+        ${total?`<span class="wr-badge">${done}/${total}</span>`:''}
+        <button class="wr-add-toggle" data-pid="${proj.id}" title="Add link">+</button>
+      </div>
+      <div class="wr-body">
+        ${links.length ? `<div class="wr-links">${links.map((l,li)=>`
+          <div class="wr-link-row">
+            ${li===0?'<span class="wr-latest-tag sm">LATEST</span>':'<span class="wr-dot"></span>'}
+            <a class="wr-link" href="${esc(l.url)}" target="_blank" rel="noopener" title="${esc(l.url)}">${esc(linkLabel(l))}</a>
+            <button class="wr-link-del" data-pid="${proj.id}" data-lid="${l.id}" title="Remove link">&times;</button>
+          </div>`).join('')}</div>`
+          : '<div class="wr-empty">no links yet</div>'}
+        <div class="wr-add">
+          <input class="wr-add-url" data-pid="${proj.id}" placeholder="paste site url...">
+          <input class="wr-add-label" data-pid="${proj.id}" placeholder="label">
+          <button class="wr-add-btn" data-pid="${proj.id}">add</button>
+        </div>
+      </div>
+    </div>`;
+  }).join('');
+  attachWarRoomEvents();
+}
+
+function attachWarRoomEvents(){
+  const grid = document.getElementById('warRoomGrid');
+  grid.querySelectorAll('.wr-add-toggle').forEach(btn=>{
+    btn.addEventListener('click', e=>{
+      e.stopPropagation();
+      const pid = btn.dataset.pid;
+      if(wrAddOpen.has(pid)) wrAddOpen.delete(pid); else wrAddOpen.add(pid);
+      renderWarRoom();
+      if(wrAddOpen.has(pid)){
+        const inp = grid.querySelector(`.wr-add-url[data-pid="${pid}"]`);
+        if(inp) inp.focus();
+      }
+    });
+  });
+  grid.querySelectorAll('.wr-add-btn').forEach(b=>{
+    b.addEventListener('click', ()=>addWrLink(b.dataset.pid));
+  });
+  grid.querySelectorAll('.wr-add-url, .wr-add-label').forEach(inp=>{
+    inp.addEventListener('keydown', e=>{ if(e.key==='Enter') addWrLink(inp.dataset.pid); });
+  });
+  grid.querySelectorAll('.wr-link-del').forEach(btn=>{
+    btn.addEventListener('click', e=>{
+      e.stopPropagation();
+      const proj = projects.find(p=>p.id===btn.dataset.pid);
+      if(!proj) return;
+      proj.links = (proj.links||[]).filter(l=>l.id!==btn.dataset.lid);
+      saveProjects();
+      renderWarRoom();
+    });
+  });
+}
+
+function addWrLink(pid){
+  const proj = projects.find(p=>p.id===pid);
+  if(!proj) return;
+  const grid = document.getElementById('warRoomGrid');
+  const urlInp = grid.querySelector(`.wr-add-url[data-pid="${pid}"]`);
+  const lblInp = grid.querySelector(`.wr-add-label[data-pid="${pid}"]`);
+  const url = normalizeUrl(urlInp && urlInp.value);
+  if(!url) return;
+  if(!proj.links) proj.links = [];
+  proj.links.push({ id:uid(), url, label:(lblInp?lblInp.value.trim():''), ts:Date.now() });
+  wrAddOpen.add(pid);
+  saveProjects();
+  renderWarRoom();
+}
 
 // ---- AI NODE EDITOR ----
 const aiCanvasWrap = document.getElementById('aiCanvasWrap');
@@ -1693,6 +1917,42 @@ let cloudUnsub = null;
 let isApplyingRemote = false;
 let pushTimer = null;
 
+// Known project site links, discovered from Jorge's GitHub + 3d.ar.
+// Seeded once into existing projects (matched by name), newest first.
+const KNOWN_LINKS = {
+  'EGGSCAPE':[
+    {url:'https://3d.ar/eggscape/', label:'Eggscape Intel'}
+  ],
+  'NATURIS':[
+    {url:'https://3d.ar/naturis/', label:'Naturis site'},
+    {url:'https://jorgetereso.github.io/brotaciones/projects/naturis/', label:'Brotaciones'}
+  ],
+  'PROTAGONIST':[
+    {url:'https://jorgetereso.github.io/brotaciones/projects/protagonist/', label:'Brotaciones'}
+  ],
+  'HIRAKU':[
+    {url:'https://jorgetereso.github.io/HIRAKU/', label:'Hiraku site'}
+  ]
+};
+function maybeSeedLinks(){
+  if(localStorage.getItem('accion_links_seeded_v1')) return;
+  const now = Date.now();
+  let changed = false;
+  projects.forEach(p=>{
+    const set = KNOWN_LINKS[p.name];
+    if(!set) return;
+    if(!p.links) p.links = [];
+    set.forEach((s,i)=>{
+      if(!p.links.some(l=>l.url===s.url)){
+        p.links.push({ id:uid(), url:s.url, label:s.label, ts: now - i*1000 });
+        changed = true;
+      }
+    });
+  });
+  localStorage.setItem('accion_links_seeded_v1','1');
+  if(changed) saveProjects();
+}
+
 function pushToCloud(){
   if(!fbAuth.currentUser || isApplyingRemote) return;
   clearTimeout(pushTimer);
@@ -1721,6 +1981,7 @@ fbAuth.onAuthStateChanged(u=>{
     if(cloudUnsub) cloudUnsub();
     cloudUnsub = fbDb.collection('users').doc(u.uid).onSnapshot(snap=>{
       if(!snap.exists){
+        maybeSeedLinks();
         pushToCloud();
         return;
       }
@@ -1732,6 +1993,7 @@ fbAuth.onAuthStateChanged(u=>{
         localStorage.setItem('accion_projects', JSON.stringify(projects));
       }
       isApplyingRemote = false;
+      maybeSeedLinks();
       render();
     }, err=>console.error('cloud snapshot',err));
   } else {
