@@ -604,7 +604,7 @@ body.signed-out .top-tabs{display:none}
 .warroom-title{font-size:16px;font-weight:600;letter-spacing:5px;color:var(--accent)}
 .warroom-sub{font-size:11px;color:var(--dim);letter-spacing:1px}
 .warroom-grid{
-  display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:14px;
+  display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:12px;
 }
 .wr-card{
   background:var(--bg1);border:1px solid var(--border);border-radius:8px;
@@ -635,6 +635,13 @@ body.signed-out .top-tabs{display:none}
   border:1px solid rgba(16,185,129,.4);border-radius:3px;padding:1px 4px;flex-shrink:0;
 }
 .wr-latest-tag.sm{font-size:8px}
+
+/* Site cards (live directory) */
+a.wr-card{text-decoration:none;color:var(--text);display:block}
+.wr-site-head{padding:12px 14px 4px;display:flex;align-items:center;gap:8px}
+.wr-open-icon{color:var(--dimmer);font-size:13px;flex-shrink:0;transition:color .12s}
+a.wr-card:hover .wr-open-icon{color:var(--wr-c)}
+.wr-site-desc{padding:2px 14px 12px;font-size:11px;color:var(--dim);line-height:1.5}
 
 /* Links body — always visible */
 .wr-body{padding:0 14px 12px}
@@ -1438,111 +1445,112 @@ document.querySelectorAll('.top-tab').forEach(t=>{
 localStorage.setItem('accion_view','projects');
 
 // ---- WAR ROOM ----
-let wrAddOpen = new Set();
+// The War Room is a live directory of ALL of Jorge's sites, aggregated from
+// his hub (jorgetereso.github.io → 3d.ar cards) + his GitHub Pages repos +
+// a few curated extras. Fetched live, so new sites appear automatically.
+let warSites = null, warLoading = false;
+const WAR_COLORS = ['#7eb8ff','#5eead4','#ffc857','#ff6b9d','#a78bfa','#aaff47'];
+const WAR_EXTRAS = [
+  {name:'Queens', desc:'Pitch & sinopsis', url:'https://3d.ar/queens/', color:'#ff6b9d'},
+  {name:'Protagonist', desc:'A narcissistic game protagonist — Brotaciones', url:'https://jorgetereso.github.io/brotaciones/projects/protagonist/', color:'#5ba4cf'}
+];
+// Snapshot fallback (local dev / if a live fetch fails)
+const WAR_FALLBACK = [
+  {name:'Gloomy Eyes', desc:'Interactive audio-visual experience', url:'https://3d.ar/gloomyeyes/', color:'#a78bfa'},
+  {name:'Gloomy Eyes — Ownership', desc:'IP ownership pitch deck (LBE co-production)', url:'https://3d.ar/gloomyeyes-ownership/', color:'#a78bfa'},
+  {name:'Gloomy Eyes — Timing', desc:'Production timeline overview', url:'https://3d.ar/gloomyeyes-timing/', color:'#a78bfa'},
+  {name:'Eggscape Intel', desc:'VR game marketing research hub (20 pages)', url:'https://3d.ar/eggscape/', color:'#ffc857'},
+  {name:'Naturis', desc:'Technology is nature too — brand landing', url:'https://3d.ar/naturis/', color:'#5eead4'},
+  {name:'Hiraku', desc:'Interactive live experience', url:'https://3d.ar/HIRAKU/', color:'#ff6b9d'},
+  {name:'Eyes On You', desc:'Camera + audio reactive visual experience', url:'https://3d.ar/eyesonyou/', color:'#5eead4'},
+  {name:'Time Allocation', desc:'3dar.io — team scheduling, project weeks, cost', url:'https://3d.ar/time-allocation/', color:'#aaff47'},
+  {name:'Finance Tracker', desc:'Portfolio management dashboard', url:'https://3d.ar/finance-tracker/', color:'#aaff47'},
+  {name:'Banana Airways', desc:'Game pitch microsite — brief, gameplay, cast, props', url:'https://3d.ar/banana/', color:'#ffc857'},
+  {name:'Quinceañera Crashers', desc:'Animated series pitch', url:'https://3d.ar/crashers/', color:'#ff6b9d'},
+  {name:'CRIS.BAND · Cast', desc:'Elenco gallery — 12 photos + 8 clips', url:'https://3d.ar/cris-band-cast/', color:'#a78bfa'},
+  {name:'CRIS · Virtual IPs', desc:'Catalog of 28+ virtual/animated music IPs', url:'https://3d.ar/cris/', color:'#a78bfa'},
+  {name:'1000Signals', desc:'Competitive intel for hoteliers', url:'https://3d.ar/hospitality/', color:'#7eb8ff'},
+  {name:'Nevatars · Cinema', desc:'Feature-film treatment', url:'https://3d.ar/nevatars-cine/', color:'#ffc857'},
+  {name:'Nevatars · Venice 2026', desc:'Two Worlds — Venice 2026 immersive show', url:'https://3d.ar/nevatars-venice/', color:'#ffc857'},
+  {name:'Nevatars · Venice Budget', desc:'Venice 2026 — budget breakdown', url:'https://3d.ar/venice-budget/', color:'#ffc857'},
+  {name:'FIFA Avatar · Direction', desc:'Direction & references — FIFA World avatars', url:'https://3d.ar/fifa-avatar/', color:'#7eb8ff'},
+  {name:'Avatar Pipeline · FIFA', desc:'Avatar pipeline requirements', url:'https://3d.ar/avatar-req/', color:'#7eb8ff'},
+  {name:'FIFA Skills & Drills', desc:'Installation concept', url:'https://3d.ar/skills/', color:'#7eb8ff'},
+  {name:'FIFA Skills · MVP Budget', desc:'Budget breakdown', url:'https://3d.ar/skills-mvp/', color:'#7eb8ff'},
+  {name:'Dribble World Concepts', desc:'3DAR × FIFA · Dribble Around the World', url:'https://jorgetereso.github.io/dribble-world-concepts/', color:'#7eb8ff'},
+  {name:'Yahoo Scouts Design', desc:'Design presentations', url:'https://3d.ar/yahoo-scouts-design/', color:'#a78bfa'},
+  {name:'Simbra · Plan', desc:'Le Breton — plan de acción', url:'https://3d.ar/simbra-plan/', color:'#5eead4'},
+  {name:'TBE · Activation', desc:'Guided client-onboarding prototype', url:'https://3d.ar/tbe/', color:'#ff6b9d'},
+  {name:'Rivalidad', desc:'The Rivalry · George vs Nachito', url:'https://jorgetereso.github.io/rivalidad/', color:'#5eead4'},
+  {name:'Vacaciones GG', desc:'Shared vacation calendar — 3dar.io', url:'https://jorgetereso.github.io/vacaciones-gg/', color:'#5eead4'},
+  {name:'Gym Bro', desc:'Track every set. Beat last week.', url:'https://jorgetereso.github.io/gymbro/', color:'#aaff47'},
+  {name:'Vital Health', desc:'Private personal health dashboard', url:'https://jorgetereso.github.io/vital-health/', color:'#ff6b9d'},
+  {name:'Brotaciones', desc:'3dar creative pool 2025/2026', url:'https://jorgetereso.github.io/brotaciones/', color:'#a78bfa'},
+  ...WAR_EXTRAS
+];
 
-function normalizeUrl(u){
-  u = (u||'').trim();
-  if(!u) return '';
-  if(!/^https?:\/\//i.test(u)) u = 'https://' + u;
-  return u;
+function warKey(name, url){ return (name||'').toLowerCase().replace(/[^a-z0-9]/g,'') || url; }
+
+function fetchHubSites(){
+  return fetch('/').then(r=>r.text()).then(t=>{
+    const doc = new DOMParser().parseFromString(t,'text/html');
+    return [...doc.querySelectorAll('.proj-card')].map(c=>({
+      name:((c.querySelector('.card-name')||{}).textContent||c.dataset.id||'').trim(),
+      desc:((c.querySelector('.card-desc')||{}).textContent||'').trim(),
+      url:c.dataset.href||'', color:c.dataset.color||''
+    })).filter(s=>s.url && !/\/ACCION\/?$/i.test(s.url));
+  }).catch(()=>[]);
 }
-function prettyUrl(u){
-  try{
-    const x = new URL(u);
-    const path = x.pathname && x.pathname !== '/' ? x.pathname : '';
-    return x.hostname.replace(/^www\./,'') + path;
-  }catch(e){ return u; }
+function fetchGithubSites(){
+  return fetch('https://api.github.com/users/Jorgetereso/repos?per_page=100&sort=pushed')
+    .then(r=> r.ok ? r.json() : [])
+    .then(repos => (repos||[])
+      .filter(r=>r.has_pages && !/^(jorgetereso\.github\.io|accion|todo)$/i.test(r.name))
+      .map((r,i)=>({
+        name:r.name.replace(/[-_]+/g,' ').replace(/\b\w/g,c=>c.toUpperCase()),
+        desc:r.description||'', url:'https://jorgetereso.github.io/'+r.name+'/',
+        color:WAR_COLORS[i%WAR_COLORS.length]
+      })))
+    .catch(()=>[]);
 }
-function linkLabel(l){ return l.label ? l.label : prettyUrl(l.url); }
+function loadWarSites(){
+  if(warLoading) return Promise.resolve();
+  warLoading = true;
+  return Promise.all([fetchHubSites(), fetchGithubSites()]).then(([hub, gh])=>{
+    const seen = new Set(), out = [];
+    // Live sources first (fresh names/desc win); WAR_FALLBACK fills any gaps.
+    [...hub, ...gh, ...WAR_FALLBACK].forEach(s=>{
+      const k = warKey(s.name, s.url);
+      if(seen.has(k)) return;
+      seen.add(k); out.push(s);
+    });
+    warSites = out;
+    warLoading = false;
+  });
+}
 
 function renderWarRoom(){
   const grid = document.getElementById('warRoomGrid');
   const sub = document.getElementById('warRoomSub');
   if(!grid) return;
-  if(!signedIn){ grid.innerHTML=''; sub.textContent=''; return; }
-  if(!projects.length){
+  if(!warSites){
     sub.textContent = '';
-    grid.innerHTML = '<div class="warroom-empty">no projects yet</div>';
+    grid.innerHTML = '<div class="warroom-empty">loading sites…</div>';
+    loadWarSites().then(()=>{ if(warRoomView.classList.contains('active')) renderWarRoom(); });
     return;
   }
-  sub.textContent = projects.length + ' project' + (projects.length!==1?'s':'') + ' active';
-  grid.innerHTML = projects.map(proj=>{
-    const links = (proj.links||[]).slice().sort((a,b)=>(b.ts||0)-(a.ts||0));
-    const done = proj.tasks.filter(t=>t.done).length;
-    const total = proj.tasks.length;
-    const adding = wrAddOpen.has(proj.id);
+  sub.textContent = warSites.length + ' site' + (warSites.length!==1?'s':'');
+  grid.innerHTML = warSites.map(s=>{
+    const c = s.color || '#3b82f6';
     return `
-    <div class="wr-card ${adding?'adding':''}" style="--wr-c:${proj.color}">
-      <div class="wr-card-head">
-        <span class="wr-dot-static" style="background:${proj.color}"></span>
-        <span class="wr-name" style="color:${proj.color}">${esc(proj.name)}</span>
-        ${total?`<span class="wr-badge">${done}/${total}</span>`:''}
-        <button class="wr-add-toggle" data-pid="${proj.id}" title="Add link">+</button>
+    <a class="wr-card wr-site" style="--wr-c:${c}" href="${esc(s.url)}" target="_blank" rel="noopener">
+      <div class="wr-site-head">
+        <span class="wr-name" style="color:${c}">${esc(s.name)}</span>
+        <span class="wr-open-icon">&#8599;</span>
       </div>
-      <div class="wr-body">
-        ${links.length ? `<div class="wr-links">${links.map((l,li)=>`
-          <div class="wr-link-row">
-            ${li===0?'<span class="wr-latest-tag sm">LATEST</span>':'<span class="wr-dot"></span>'}
-            <a class="wr-link" href="${esc(l.url)}" target="_blank" rel="noopener" title="${esc(l.url)}">${esc(linkLabel(l))}</a>
-            <button class="wr-link-del" data-pid="${proj.id}" data-lid="${l.id}" title="Remove link">&times;</button>
-          </div>`).join('')}</div>`
-          : '<div class="wr-empty">no links yet</div>'}
-        <div class="wr-add">
-          <input class="wr-add-url" data-pid="${proj.id}" placeholder="paste site url...">
-          <input class="wr-add-label" data-pid="${proj.id}" placeholder="label">
-          <button class="wr-add-btn" data-pid="${proj.id}">add</button>
-        </div>
-      </div>
-    </div>`;
+      ${s.desc?`<div class="wr-site-desc">${esc(s.desc)}</div>`:''}
+    </a>`;
   }).join('');
-  attachWarRoomEvents();
-}
-
-function attachWarRoomEvents(){
-  const grid = document.getElementById('warRoomGrid');
-  grid.querySelectorAll('.wr-add-toggle').forEach(btn=>{
-    btn.addEventListener('click', e=>{
-      e.stopPropagation();
-      const pid = btn.dataset.pid;
-      if(wrAddOpen.has(pid)) wrAddOpen.delete(pid); else wrAddOpen.add(pid);
-      renderWarRoom();
-      if(wrAddOpen.has(pid)){
-        const inp = grid.querySelector(`.wr-add-url[data-pid="${pid}"]`);
-        if(inp) inp.focus();
-      }
-    });
-  });
-  grid.querySelectorAll('.wr-add-btn').forEach(b=>{
-    b.addEventListener('click', ()=>addWrLink(b.dataset.pid));
-  });
-  grid.querySelectorAll('.wr-add-url, .wr-add-label').forEach(inp=>{
-    inp.addEventListener('keydown', e=>{ if(e.key==='Enter') addWrLink(inp.dataset.pid); });
-  });
-  grid.querySelectorAll('.wr-link-del').forEach(btn=>{
-    btn.addEventListener('click', e=>{
-      e.stopPropagation();
-      const proj = projects.find(p=>p.id===btn.dataset.pid);
-      if(!proj) return;
-      proj.links = (proj.links||[]).filter(l=>l.id!==btn.dataset.lid);
-      saveProjects();
-      renderWarRoom();
-    });
-  });
-}
-
-function addWrLink(pid){
-  const proj = projects.find(p=>p.id===pid);
-  if(!proj) return;
-  const grid = document.getElementById('warRoomGrid');
-  const urlInp = grid.querySelector(`.wr-add-url[data-pid="${pid}"]`);
-  const lblInp = grid.querySelector(`.wr-add-label[data-pid="${pid}"]`);
-  const url = normalizeUrl(urlInp && urlInp.value);
-  if(!url) return;
-  if(!proj.links) proj.links = [];
-  proj.links.push({ id:uid(), url, label:(lblInp?lblInp.value.trim():''), ts:Date.now() });
-  wrAddOpen.add(pid);
-  saveProjects();
-  renderWarRoom();
 }
 
 // ---- AI NODE EDITOR ----
@@ -1917,51 +1925,6 @@ let cloudUnsub = null;
 let isApplyingRemote = false;
 let pushTimer = null;
 
-// Known project site links, discovered from Jorge's site hub (jorgetereso.github.io)
-// + 3d.ar + GitHub. Seeded once into existing projects (matched by name), newest first.
-const KNOWN_LINKS = {
-  'GLOOMY LBE':[
-    {url:'https://3d.ar/gloomyeyes/', label:'Gloomy Eyes LBE'},
-    {url:'https://3d.ar/gloomyeyes-ownership/', label:'Ownership'},
-    {url:'https://3d.ar/gloomyeyes-timing/', label:'Timing'}
-  ],
-  'EGGSCAPE':[
-    {url:'https://3d.ar/eggscape/', label:'Eggscape Intel'}
-  ],
-  '3DAR EXEC':[
-    {url:'https://3d.ar/time-allocation/', label:'Time Allocation'},
-    {url:'https://3d.ar/finance-tracker/', label:'Portfolio Management'}
-  ],
-  'PROTAGONIST':[
-    {url:'https://jorgetereso.github.io/brotaciones/projects/protagonist/', label:'Brotaciones'}
-  ],
-  'HIRAKU':[
-    {url:'https://3d.ar/HIRAKU/', label:'Hiraku'}
-  ],
-  'NATURIS':[
-    {url:'https://3d.ar/naturis/', label:'Naturis'},
-    {url:'https://jorgetereso.github.io/brotaciones/projects/naturis/', label:'Brotaciones'}
-  ]
-};
-function maybeSeedLinks(){
-  if(localStorage.getItem('accion_links_seeded_v2')) return;
-  const now = Date.now();
-  let changed = false;
-  projects.forEach(p=>{
-    const set = KNOWN_LINKS[p.name];
-    if(!set) return;
-    if(!p.links) p.links = [];
-    set.forEach((s,i)=>{
-      if(!p.links.some(l=>l.url===s.url)){
-        p.links.push({ id:uid(), url:s.url, label:s.label, ts: now - i*1000 });
-        changed = true;
-      }
-    });
-  });
-  localStorage.setItem('accion_links_seeded_v2','1');
-  if(changed) saveProjects();
-}
-
 function pushToCloud(){
   if(!fbAuth.currentUser || isApplyingRemote) return;
   clearTimeout(pushTimer);
@@ -1990,7 +1953,6 @@ fbAuth.onAuthStateChanged(u=>{
     if(cloudUnsub) cloudUnsub();
     cloudUnsub = fbDb.collection('users').doc(u.uid).onSnapshot(snap=>{
       if(!snap.exists){
-        maybeSeedLinks();
         pushToCloud();
         return;
       }
@@ -2002,7 +1964,6 @@ fbAuth.onAuthStateChanged(u=>{
         localStorage.setItem('accion_projects', JSON.stringify(projects));
       }
       isApplyingRemote = false;
-      maybeSeedLinks();
       render();
     }, err=>console.error('cloud snapshot',err));
   } else {
