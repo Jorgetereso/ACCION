@@ -642,6 +642,18 @@ a.wr-card{text-decoration:none;color:var(--text);display:block}
 .wr-open-icon{color:var(--dimmer);font-size:13px;flex-shrink:0;transition:color .12s}
 a.wr-card:hover .wr-open-icon{color:var(--wr-c)}
 .wr-site-desc{padding:2px 14px 12px;font-size:11px;color:var(--dim);line-height:1.5}
+.wr-del{
+  background:none;border:none;color:var(--dimmer);cursor:pointer;
+  padding:2px 3px;line-height:0;flex-shrink:0;display:flex;align-items:center;
+  opacity:.4;transition:all .12s;
+}
+a.wr-card:hover .wr-del{opacity:.75}
+.wr-del:hover{opacity:1;color:#ef4444;transform:scale(1.15)}
+.wr-restore{
+  background:none;border:none;color:var(--dimmer);cursor:pointer;
+  font-family:inherit;font-size:11px;text-decoration:underline;padding:0;
+}
+.wr-restore:hover{color:var(--accent)}
 
 /* Links body — always visible */
 .wr-body{padding:0 14px 12px}
@@ -1449,6 +1461,11 @@ localStorage.setItem('accion_view','projects');
 // his hub (jorgetereso.github.io → 3d.ar cards) + his GitHub Pages repos +
 // a few curated extras. Fetched live, so new sites appear automatically.
 let warSites = null, warLoading = false;
+let warHidden = new Set(JSON.parse(localStorage.getItem('accion_war_hidden')||'[]'));
+function saveWarHidden(){
+  localStorage.setItem('accion_war_hidden', JSON.stringify([...warHidden]));
+  if(typeof pushToCloud==='function') pushToCloud();
+}
 const WAR_COLORS = ['#7eb8ff','#5eead4','#ffc857','#ff6b9d','#a78bfa','#aaff47'];
 const WAR_EXTRAS = [
   {name:'Queens', desc:'Pitch & sinopsis', url:'https://3d.ar/queens/', color:'#ff6b9d'},
@@ -1539,18 +1556,32 @@ function renderWarRoom(){
     loadWarSites().then(()=>{ if(warRoomView.classList.contains('active')) renderWarRoom(); });
     return;
   }
-  sub.textContent = warSites.length + ' site' + (warSites.length!==1?'s':'');
-  grid.innerHTML = warSites.map(s=>{
+  const visible = warSites.filter(s=>!warHidden.has(s.url));
+  const hiddenCount = warSites.length - visible.length;
+  sub.innerHTML = visible.length + ' site' + (visible.length!==1?'s':'')
+    + (hiddenCount ? ` &middot; <button class="wr-restore">${hiddenCount} hidden — restore</button>` : '');
+  grid.innerHTML = visible.map(s=>{
     const c = s.color || '#3b82f6';
     return `
     <a class="wr-card wr-site" style="--wr-c:${c}" href="${esc(s.url)}" target="_blank" rel="noopener">
       <div class="wr-site-head">
         <span class="wr-name" style="color:${c}">${esc(s.name)}</span>
         <span class="wr-open-icon">&#8599;</span>
+        <button class="wr-del" data-url="${esc(s.url)}" title="Remove from War Room" aria-label="Remove"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg></button>
       </div>
       ${s.desc?`<div class="wr-site-desc">${esc(s.desc)}</div>`:''}
     </a>`;
   }).join('');
+  grid.querySelectorAll('.wr-del').forEach(btn=>{
+    btn.addEventListener('click', e=>{
+      e.preventDefault(); e.stopPropagation();
+      warHidden.add(btn.dataset.url);
+      saveWarHidden();
+      renderWarRoom();
+    });
+  });
+  const rb = sub.querySelector('.wr-restore');
+  if(rb) rb.addEventListener('click', ()=>{ warHidden.clear(); saveWarHidden(); renderWarRoom(); });
 }
 
 // ---- AI NODE EDITOR ----
@@ -1931,6 +1962,7 @@ function pushToCloud(){
   pushTimer = setTimeout(()=>{
     fbDb.collection('users').doc(fbAuth.currentUser.uid).set({
       projects,
+      warHidden: [...warHidden],
       updatedAt: Date.now()
     }, { merge: true }).catch(err=>console.error('cloud push',err));
   }, 400);
@@ -1962,6 +1994,10 @@ fbAuth.onAuthStateChanged(u=>{
       if(Array.isArray(data.projects)){
         projects = data.projects;
         localStorage.setItem('accion_projects', JSON.stringify(projects));
+      }
+      if(Array.isArray(data.warHidden)){
+        warHidden = new Set(data.warHidden);
+        localStorage.setItem('accion_war_hidden', JSON.stringify(data.warHidden));
       }
       isApplyingRemote = false;
       render();
