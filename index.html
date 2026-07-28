@@ -606,95 +606,57 @@ body.signed-out .top-tabs{display:none}
 .warroom-grid{
   display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:12px;
 }
-.wr-card{
+/* ---- War Room: project cards ---- */
+.wr-proj{
   background:var(--bg1);border:1px solid var(--border);border-radius:8px;
-  overflow:hidden;border-left:3px solid var(--wr-c,#3b82f6);
-  transition:border-color .15s,box-shadow .15s;align-self:start;
+  border-left:3px solid var(--wr-c,#3b82f6);overflow:hidden;align-self:start;
+  transition:border-color .15s,box-shadow .15s,opacity .12s;
 }
-.wr-card:hover{border-color:#333;box-shadow:0 4px 18px rgba(0,0,0,.35)}
-.wr-card-head{
-  padding:12px 14px;display:flex;align-items:center;gap:9px;
+.wr-proj:hover{border-color:#333;box-shadow:0 4px 18px rgba(0,0,0,.35)}
+.wr-proj.wr-dragging{opacity:.35}
+.wr-proj.wr-drop-over{border-color:var(--wr-c,var(--accent));box-shadow:0 0 0 1px var(--wr-c,var(--accent))}
+.wr-proj-head{
+  padding:11px 12px;display:flex;align-items:center;gap:9px;
+  cursor:pointer;user-select:none;
 }
-.wr-dot-static{width:10px;height:10px;min-width:10px;border-radius:50%}
-.wr-name{font-size:13px;font-weight:500;flex:1;word-break:break-word}
-.wr-badge{
-  font-size:9px;color:var(--dim);background:rgba(255,255,255,.05);
-  padding:2px 7px;border-radius:10px;letter-spacing:.5px;white-space:nowrap;
+.wr-grip{color:var(--dimmer);font-size:13px;cursor:grab;line-height:1;flex-shrink:0;letter-spacing:-3px;opacity:.5}
+.wr-proj:hover .wr-grip{opacity:.9}
+.wr-dot{width:9px;height:9px;min-width:9px;border-radius:50%;background:var(--wr-c);flex-shrink:0}
+.wr-proj-name{font-size:13px;font-weight:600;flex:1;word-break:break-word;letter-spacing:.3px}
+.wr-count{
+  font-size:9px;color:var(--dim);background:rgba(255,255,255,.06);
+  padding:2px 7px;border-radius:10px;white-space:nowrap;flex-shrink:0;
 }
-.wr-add-toggle{
-  background:none;border:1px solid var(--border);color:var(--dimmer);
-  width:20px;height:20px;border-radius:4px;cursor:pointer;font-size:13px;
-  display:flex;align-items:center;justify-content:center;line-height:1;
-  opacity:0;transition:all .15s;flex-shrink:0;
+.wr-chev{color:var(--dimmer);font-size:10px;transition:transform .15s;flex-shrink:0}
+.wr-proj.collapsed .wr-chev{transform:rotate(-90deg)}
+.wr-proj-body{padding:0 8px 8px;display:flex;flex-direction:column;gap:1px}
+.wr-proj.collapsed .wr-proj-body{display:none}
+.wr-row{
+  display:flex;align-items:center;gap:7px;padding:6px 6px;border-radius:5px;
+  transition:background .12s;
 }
-.wr-card:hover .wr-add-toggle{opacity:1}
-.wr-add-toggle:hover{border-color:var(--accent);color:var(--accent)}
-.wr-card.adding .wr-add-toggle{opacity:1;border-color:var(--accent);color:var(--accent)}
-.wr-latest-tag{
-  font-size:8px;font-weight:600;letter-spacing:1px;color:#10b981;
-  border:1px solid rgba(16,185,129,.4);border-radius:3px;padding:1px 4px;flex-shrink:0;
-}
-.wr-latest-tag.sm{font-size:8px}
-
-/* Site cards (live directory) */
-a.wr-card{text-decoration:none;color:var(--text);display:block}
-.wr-site-head{padding:12px 14px 4px;display:flex;align-items:center;gap:8px}
-.wr-open-icon{color:var(--dimmer);font-size:13px;flex-shrink:0;transition:color .12s}
-a.wr-card:hover .wr-open-icon{color:var(--wr-c)}
-.wr-site-desc{padding:2px 14px 12px;font-size:11px;color:var(--dim);line-height:1.5}
+.wr-row:hover{background:rgba(255,255,255,.03)}
+.wr-row.wr-dragging{opacity:.35}
+.wr-rgrip{color:var(--dimmer);font-size:12px;cursor:grab;line-height:1;flex-shrink:0;opacity:0;letter-spacing:-3px}
+.wr-row:hover .wr-rgrip{opacity:.55}
+.wr-rmain{flex:1;min-width:0;text-decoration:none;color:var(--text);overflow:hidden;display:block}
+.wr-rname{display:block;font-size:12px;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;transition:color .12s}
+.wr-rmain:hover .wr-rname{color:var(--wr-c)}
+.wr-rdesc{display:block;font-size:10px;color:var(--dim);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-top:1px}
+.wr-open{color:var(--dimmer);font-size:13px;flex-shrink:0;text-decoration:none;transition:color .12s;line-height:1}
+.wr-row:hover .wr-open{color:var(--wr-c)}
 .wr-del{
   background:none;border:none;color:var(--dimmer);cursor:pointer;
   padding:2px 3px;line-height:0;flex-shrink:0;display:flex;align-items:center;
-  opacity:.4;transition:all .12s;
+  opacity:.3;transition:all .12s;
 }
-a.wr-card:hover .wr-del{opacity:.75}
+.wr-row:hover .wr-del{opacity:.7}
 .wr-del:hover{opacity:1;color:#ef4444;transform:scale(1.15)}
 .wr-restore{
   background:none;border:none;color:var(--dimmer);cursor:pointer;
   font-family:inherit;font-size:11px;text-decoration:underline;padding:0;
 }
 .wr-restore:hover{color:var(--accent)}
-
-/* Links body — always visible */
-.wr-body{padding:0 14px 12px}
-.wr-links{
-  display:flex;flex-direction:column;gap:2px;
-  border-top:1px solid var(--border);padding-top:8px;margin-top:2px;
-}
-.wr-link-row{display:flex;align-items:center;gap:8px;padding:4px 2px;border-radius:4px}
-.wr-link-row:hover{background:rgba(255,255,255,.02)}
-.wr-dot{width:5px;height:5px;min-width:5px;border-radius:50%;background:var(--dimmer);margin:0 1px}
-.wr-link{
-  flex:1;font-size:11px;color:var(--text);text-decoration:none;
-  overflow:hidden;text-overflow:ellipsis;white-space:nowrap;transition:color .12s;
-}
-.wr-link:hover{color:var(--accent);text-decoration:underline}
-.wr-link-del{
-  background:none;border:none;color:var(--dimmer);cursor:pointer;font-size:13px;
-  padding:0 4px;opacity:0;transition:all .12s;flex-shrink:0;
-}
-.wr-link-row:hover .wr-link-del{opacity:1}
-.wr-link-del:hover{color:#ef4444}
-.wr-empty{
-  font-size:10px;color:var(--dimmer);padding:10px 2px;letter-spacing:.5px;
-  border-top:1px solid var(--border);margin-top:2px;
-}
-.wr-add{display:none;gap:6px;margin-top:10px;flex-wrap:wrap}
-.wr-card.adding .wr-add{display:flex}
-.wr-add-url,.wr-add-label{
-  background:var(--bg);border:1px solid var(--border);color:var(--text);
-  font-family:inherit;font-size:11px;padding:6px 9px;border-radius:4px;
-  outline:none;transition:border-color .15s;
-}
-.wr-add-url{flex:1;min-width:120px}
-.wr-add-label{width:96px;flex-shrink:0}
-.wr-add-url:focus,.wr-add-label:focus{border-color:var(--accent)}
-.wr-add-btn{
-  background:var(--bg2);border:1px solid var(--border);color:var(--dim);
-  font-family:inherit;font-size:10px;letter-spacing:1px;text-transform:uppercase;
-  padding:6px 12px;border-radius:4px;cursor:pointer;transition:all .15s;flex-shrink:0;
-}
-.wr-add-btn:hover{border-color:var(--accent);color:var(--accent)}
 .warroom-empty{
   color:var(--dimmer);font-size:12px;letter-spacing:2px;text-align:center;
   padding:60px 0;text-transform:uppercase;
@@ -1466,6 +1428,59 @@ function saveWarHidden(){
   localStorage.setItem('accion_war_hidden', JSON.stringify([...warHidden]));
   if(typeof pushToCloud==='function') pushToCloud();
 }
+// War Room layout: project order, collapsed state, manual link→project assignments, custom project meta
+let warOrder = [], warCollapsed = {}, warAssign = {}, warProjMeta = {}, warDrag = null, warProjOrder = [];
+(function loadWarLayout(){
+  try{ const o = JSON.parse(localStorage.getItem('accion_war_layout')||'{}');
+    warOrder = o.order||[]; warCollapsed = o.collapsed||{}; warAssign = o.assign||{}; warProjMeta = o.meta||{};
+  }catch(e){}
+})();
+function saveWarLayout(){
+  const o = { order:warOrder, collapsed:warCollapsed, assign:warAssign, meta:warProjMeta };
+  try{ localStorage.setItem('accion_war_layout', JSON.stringify(o)); }catch(e){}
+  if(typeof pushToCloud==='function') pushToCloud();
+}
+function applyWarLayout(o){
+  if(!o) return;
+  warOrder = o.order||[]; warCollapsed = o.collapsed||{}; warAssign = o.assign||{}; warProjMeta = o.meta||{};
+  localStorage.setItem('accion_war_layout', JSON.stringify(o));
+}
+// Auto-grouping rules — sites matching a rule collapse into one project
+const WAR_PROJECTS = [
+  {id:'gloomy-eyes', name:'Gloomy Eyes',    color:'#a78bfa', test:u=>/gloomyeyes/i.test(u)},
+  {id:'fifa',        name:'FIFA · Football',color:'#7eb8ff', test:u=>/(fifa|avatar-req|\/skills|skills-mvp|dribble-world)/i.test(u)},
+  {id:'nevatars',    name:'Nevatars',       color:'#ffc857', test:u=>/(nevatars|\/venice)/i.test(u)},
+  {id:'cris',        name:'CRIS',           color:'#a78bfa', test:u=>/\/cris/i.test(u)},
+  {id:'banana',      name:'Banana Airways', color:'#ffc857', test:u=>/\/banana/i.test(u)},
+];
+function autoProjectId(s){
+  const hit = WAR_PROJECTS.find(p=>p.test(s.url||''));
+  return hit ? hit.id : warKey(s.name, s.url);
+}
+const TRASH_SVG = '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>';
+function warPrettyUrl(u){ return (u||'').replace(/^https?:\/\//,'').replace(/\/$/,''); }
+function buildWarProjects(){
+  const map = new Map();
+  warSites.filter(s=>!warHidden.has(s.url)).forEach(s=>{
+    const k = warKey(s.name, s.url);
+    const pid = warAssign[k] || autoProjectId(s);
+    if(!map.has(pid)) map.set(pid, {id:pid, sites:[]});
+    map.get(pid).sites.push(s);
+  });
+  map.forEach(p=>{
+    const meta = warProjMeta[p.id];
+    const rule = WAR_PROJECTS.find(r=>r.id===p.id);
+    p.name  = (meta&&meta.name)  || (rule&&rule.name)  || p.sites[0].name;
+    p.color = (meta&&meta.color) || (rule&&rule.color) || p.sites[0].color || '#3b82f6';
+  });
+  const ordered = [];
+  warOrder.forEach(id=>{ if(map.has(id)){ ordered.push(map.get(id)); map.delete(id); } });
+  [...map.values()]
+    .sort((a,b)=> b.sites.length-a.sites.length || a.name.localeCompare(b.name))
+    .forEach(p=>ordered.push(p));
+  warProjOrder = ordered.map(p=>p.id);
+  return ordered;
+}
 const WAR_COLORS = ['#7eb8ff','#5eead4','#ffc857','#ff6b9d','#a78bfa','#aaff47'];
 const WAR_EXTRAS = [
   {name:'Queens', desc:'Pitch & sinopsis', url:'https://3d.ar/queens/', color:'#ff6b9d'},
@@ -1546,6 +1561,80 @@ function loadWarSites(){
   });
 }
 
+function warRowHTML(s, hideName){
+  const k = warKey(s.name, s.url);
+  const nameHtml = hideName ? '' : `<span class="wr-rname">${esc(s.name)}</span>`;
+  const descHtml = s.desc ? `<span class="wr-rdesc">${esc(s.desc)}</span>`
+                 : (hideName ? `<span class="wr-rdesc">${esc(warPrettyUrl(s.url))}</span>` : '');
+  return `<div class="wr-row" draggable="true" data-key="${esc(k)}" data-url="${esc(s.url)}">
+      <span class="wr-rgrip">&#9776;</span>
+      <a class="wr-rmain" href="${esc(s.url)}" target="_blank" rel="noopener" draggable="false">${nameHtml}${descHtml}</a>
+      <a class="wr-open" href="${esc(s.url)}" target="_blank" rel="noopener" draggable="false" title="Open">&#8599;</a>
+      <button class="wr-del" data-url="${esc(s.url)}" title="Remove" aria-label="Remove">${TRASH_SVG}</button>
+    </div>`;
+}
+function warCardHTML(p){
+  const single = p.sites.length === 1;
+  const collapsed = warCollapsed[p.id] ? ' collapsed' : '';
+  const rows = p.sites.map(s=>warRowHTML(s, single)).join('');
+  return `<div class="wr-proj${collapsed}" draggable="true" data-pid="${esc(p.id)}" style="--wr-c:${p.color||'#3b82f6'}">
+      <div class="wr-proj-head">
+        <span class="wr-grip">&#9776;</span>
+        <span class="wr-dot"></span>
+        <span class="wr-proj-name">${esc(p.name)}</span>
+        ${single?'':`<span class="wr-count">${p.sites.length}</span>`}
+        <span class="wr-chev">&#9662;</span>
+      </div>
+      <div class="wr-proj-body">${rows}</div>
+    </div>`;
+}
+function bindWarGrid(){
+  const grid = document.getElementById('warRoomGrid');
+  if(!grid || grid._warBound) return;
+  grid._warBound = true;
+  grid.addEventListener('click', e=>{
+    const del = e.target.closest('.wr-del');
+    if(del){ e.preventDefault(); e.stopPropagation(); warHidden.add(del.dataset.url); saveWarHidden(); renderWarRoom(); return; }
+    if(e.target.closest('a')) return;               // opening a link
+    const head = e.target.closest('.wr-proj-head');
+    if(head){ const pid = head.parentElement.dataset.pid; warCollapsed[pid] = !warCollapsed[pid]; saveWarLayout(); renderWarRoom(); }
+  });
+  grid.addEventListener('dragstart', e=>{
+    const row = e.target.closest('.wr-row');
+    const card = e.target.closest('.wr-proj');
+    if(row){ warDrag = {type:'link', key:row.dataset.key}; row.classList.add('wr-dragging'); }
+    else if(card){ warDrag = {type:'card', pid:card.dataset.pid}; card.classList.add('wr-dragging'); }
+    if(warDrag){ e.dataTransfer.effectAllowed='move'; try{ e.dataTransfer.setData('text/plain', warDrag.key||warDrag.pid); }catch(_){} }
+  });
+  grid.addEventListener('dragover', e=>{
+    if(!warDrag) return;
+    e.preventDefault(); e.dataTransfer.dropEffect='move';
+    const card = e.target.closest('.wr-proj');
+    grid.querySelectorAll('.wr-drop-over').forEach(el=>el.classList.remove('wr-drop-over'));
+    if(card && !(warDrag.type==='card' && card.dataset.pid===warDrag.pid)) card.classList.add('wr-drop-over');
+  });
+  grid.addEventListener('drop', e=>{
+    if(!warDrag) return;
+    e.preventDefault();
+    const card = e.target.closest('.wr-proj');
+    if(card){
+      if(warDrag.type==='link'){
+        warAssign[warDrag.key] = card.dataset.pid; saveWarLayout();
+      } else if(warDrag.type==='card' && card.dataset.pid!==warDrag.pid){
+        const order = warProjOrder.slice();
+        const from = order.indexOf(warDrag.pid); if(from>-1) order.splice(from,1);
+        let to = order.indexOf(card.dataset.pid); if(to<0) to = order.length;
+        order.splice(to, 0, warDrag.pid);
+        warOrder = order; saveWarLayout();
+      }
+    }
+    warDrag = null; renderWarRoom();
+  });
+  grid.addEventListener('dragend', ()=>{
+    warDrag = null;
+    grid.querySelectorAll('.wr-dragging,.wr-drop-over').forEach(el=>el.classList.remove('wr-dragging','wr-drop-over'));
+  });
+}
 function renderWarRoom(){
   const grid = document.getElementById('warRoomGrid');
   const sub = document.getElementById('warRoomSub');
@@ -1556,30 +1645,14 @@ function renderWarRoom(){
     loadWarSites().then(()=>{ if(warRoomView.classList.contains('active')) renderWarRoom(); });
     return;
   }
-  const visible = warSites.filter(s=>!warHidden.has(s.url));
-  const hiddenCount = warSites.length - visible.length;
-  sub.innerHTML = visible.length + ' site' + (visible.length!==1?'s':'')
+  bindWarGrid();
+  const projects = buildWarProjects();
+  const linkCount = warSites.filter(s=>!warHidden.has(s.url)).length;
+  const hiddenCount = warSites.length - linkCount;
+  sub.innerHTML = projects.length + ' project' + (projects.length!==1?'s':'')
+    + ' &middot; ' + linkCount + ' link' + (linkCount!==1?'s':'')
     + (hiddenCount ? ` &middot; <button class="wr-restore">${hiddenCount} hidden — restore</button>` : '');
-  grid.innerHTML = visible.map(s=>{
-    const c = s.color || '#3b82f6';
-    return `
-    <a class="wr-card wr-site" style="--wr-c:${c}" href="${esc(s.url)}" target="_blank" rel="noopener">
-      <div class="wr-site-head">
-        <span class="wr-name" style="color:${c}">${esc(s.name)}</span>
-        <span class="wr-open-icon">&#8599;</span>
-        <button class="wr-del" data-url="${esc(s.url)}" title="Remove from War Room" aria-label="Remove"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg></button>
-      </div>
-      ${s.desc?`<div class="wr-site-desc">${esc(s.desc)}</div>`:''}
-    </a>`;
-  }).join('');
-  grid.querySelectorAll('.wr-del').forEach(btn=>{
-    btn.addEventListener('click', e=>{
-      e.preventDefault(); e.stopPropagation();
-      warHidden.add(btn.dataset.url);
-      saveWarHidden();
-      renderWarRoom();
-    });
-  });
+  grid.innerHTML = projects.map(warCardHTML).join('');
   const rb = sub.querySelector('.wr-restore');
   if(rb) rb.addEventListener('click', ()=>{ warHidden.clear(); saveWarHidden(); renderWarRoom(); });
 }
@@ -1963,6 +2036,7 @@ function pushToCloud(){
     fbDb.collection('users').doc(fbAuth.currentUser.uid).set({
       projects,
       warHidden: [...warHidden],
+      warLayout: { order:warOrder, collapsed:warCollapsed, assign:warAssign, meta:warProjMeta },
       updatedAt: Date.now()
     }, { merge: true }).catch(err=>console.error('cloud push',err));
   }, 400);
@@ -1999,6 +2073,7 @@ fbAuth.onAuthStateChanged(u=>{
         warHidden = new Set(data.warHidden);
         localStorage.setItem('accion_war_hidden', JSON.stringify(data.warHidden));
       }
+      if(data.warLayout){ applyWarLayout(data.warLayout); }
       isApplyingRemote = false;
       render();
     }, err=>console.error('cloud snapshot',err));
